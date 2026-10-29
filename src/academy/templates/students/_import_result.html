@@ -1,0 +1,27 @@
+<div class="card">
+{% if result.header_error %}
+  <div class="result-icon fail">!</div>
+  <h2>파일을 확인해 주세요</h2>
+  <p class="muted" style="margin:8px 0 0">{{ result.header_error }}</p>
+{% elif result.errors %}
+  <div class="result-icon fail">!</div>
+  <h2>{{ result.errors|length }}개 줄에 오류가 있어요</h2>
+  <p class="muted">아무것도 등록하지 않았어요. 엑셀을 고친 뒤 다시 올려 주세요.</p>
+  <div class="table-wrap" style="margin:0 -24px">
+    <table class="table">
+      <thead><tr><th>행</th><th>내용</th></tr></thead>
+      <tbody>
+      {% for r in result.errors %}<tr><td class="num name">{{ r.row_no }}행</td><td class="error">{{ r.errors|join(', ') }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="result-icon ok">✓</div>
+  <h2>{{ result.created }}명을 등록했어요</h2>
+  {% if result.duplicates %}
+  <p class="muted" style="margin-top:8px">이미 등록된 {{ result.duplicates|length }}명은 건너뛰었어요:
+    {% for r in result.duplicates %}{{ r.row_no }}행 {{ r.student.name }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  {% endif %}
+  <a href="/students" class="btn btn-lg btn-block" style="margin-top:20px">학생 목록 보기</a>
+{% endif %}
+</div>

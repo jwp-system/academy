@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}로그인 · {{ academy_name }}{% endblock %}
+{% block body %}
+<main class="login">
+  <div class="login-box">
+    <h1>{{ academy_name }}</h1>
+    <p class="sub">원장님, 선생님 계정으로 로그인하세요.</p>
+    <div class="card">
+      {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+      <form method="post" action="/login">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+        <label class="field">
+          <span class="field-label">이메일</span>
+          <input type="email" name="email" value="{{ email or '' }}" placeholder="name@example.com" required autofocus autocomplete="username">
+        </label>
+        <label class="field">
+          <span class="field-label">비밀번호</span>
+          <input type="password" name="password" required autocomplete="current-password">
+        </label>
+        <button type="submit" class="btn btn-lg btn-block">로그인</button>
+      </form>
+    </div>
+  </div>
+</main>
+{% endblock %}

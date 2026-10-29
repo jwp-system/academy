@@ -1,0 +1,26 @@
+<div id="consultations">
+  <form hx-post="/students/{{ student.id }}/consultations" hx-target="#consultations" hx-swap="outerHTML" style="margin-bottom:8px">
+    <textarea class="input" name="content" rows="3" placeholder="상담 내용을 기록해 두세요" required
+              {% if 'content' in c_errors %}aria-invalid="true"{% endif %}>{{ c_form.get('content') or '' }}</textarea>
+    {% if 'content' in c_errors %}<span class="field-error">{{ c_errors['content'] }}</span>{% endif %}
+    <div class="toolbar" style="justify-content:flex-end;margin:12px 0 0">
+      <button type="submit" class="btn">기록하기</button>
+    </div>
+  </form>
+  {% for c, author in consultations %}
+  <div class="memo">
+    <div class="meta">
+      <strong class="num">{{ c.date }}</strong>
+      <span>{{ author.name if author else '' }}</span>
+      {% if user.role == 'admin' or c.user_id == user.id %}
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" hx-delete="/students/{{ student.id }}/consultations/{{ c.id }}"
+              hx-confirm="이 상담 기록을 삭제할까요?" data-confirm-ok="삭제" data-confirm-danger
+              hx-target="#consultations" hx-swap="outerHTML">삭제</button>
+      {% endif %}
+    </div>
+    <div class="body">{{ c.content }}</div>
+  </div>
+  {% else %}
+  <p class="muted" style="margin:16px 0 0">아직 상담 기록이 없어요</p>
+  {% endfor %}
+</div>

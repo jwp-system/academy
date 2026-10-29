@@ -1,0 +1,16 @@
+{% from "macros.html" import field, checkbox %}
+<form class="subform" hx-put="/students/{{ student.id }}/guardians/{{ g.id }}" hx-target="this" hx-swap="outerHTML">
+  <div class="grid-2">
+    {{ field('name', '이름', form, errors, required=True) }}
+    {{ field('relation', '관계', form, errors) }}
+    {{ field('phone', '연락처', form, errors, type='tel') }}
+    {{ field('email', '이메일', form, errors, type='email') }}
+  </div>
+  {{ checkbox('notify_sms', '문자 알림 받기', form) }}
+  {{ checkbox('notify_email', '이메일 알림 받기', form) }}
+  <div class="toolbar" style="margin:16px 0 0">
+    <button type="button" class="btn btn-secondary" hx-get="/students/{{ student.id }}" hx-select="#guardians"
+            hx-target="#guardians" hx-swap="outerHTML">취소</button>
+    <button type="submit" class="btn">저장하기</button>
+  </div>
+</form>

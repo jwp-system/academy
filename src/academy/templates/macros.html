@@ -1,0 +1,80 @@
+{# 폼 필드. form: 입력값 dict, errors: {필드명: 메시지} #}
+{% macro field(name, label, form, errors, type="text", required=False, help=None, placeholder="") -%}
+<label class="field">
+  <span class="field-label">{{ label }}{% if required %}<span class="req">*</span>{% endif %}</span>
+  <input type="{{ type }}" name="{{ name }}" placeholder="{{ placeholder }}"
+         value="{{ '' if type == 'password' else (form.get(name) if form.get(name) is not none else '') }}"
+         {% if required %}required{% endif %}
+         {% if name in errors %}aria-invalid="true"{% endif %}>
+  {% if name in errors %}<span class="field-error">{{ errors[name] }}</span>
+  {% elif help %}<span class="field-help">{{ help }}</span>{% endif %}
+</label>
+{%- endmacro %}
+
+{% macro textarea(name, label, form, errors, rows=3, placeholder="") -%}
+<label class="field">
+  <span class="field-label">{{ label }}</span>
+  <textarea name="{{ name }}" rows="{{ rows }}" placeholder="{{ placeholder }}"
+            {% if name in errors %}aria-invalid="true"{% endif %}>{{ form.get(name) or '' }}</textarea>
+  {% if name in errors %}<span class="field-error">{{ errors[name] }}</span>{% endif %}
+</label>
+{%- endmacro %}
+
+{% macro select(name, label, form, errors, options) -%}
+<label class="field">
+  <span class="field-label">{{ label }}</span>
+  <select name="{{ name }}" {% if name in errors %}aria-invalid="true"{% endif %}>
+    {% for value, text in options %}
+    <option value="{{ value }}" {% if form.get(name)|string == value %}selected{% endif %}>{{ text }}</option>
+    {% endfor %}
+  </select>
+  {% if name in errors %}<span class="field-error">{{ errors[name] }}</span>{% endif %}
+</label>
+{%- endmacro %}
+
+{% macro checkbox(name, label, form) -%}
+<label class="check"><input type="checkbox" name="{{ name }}" {% if form.get(name) in (true, 'on') %}checked{% endif %}>{{ label }}</label>
+{%- endmacro %}
+
+{# 모달: <dialog class="modal">{{ modal_header(..) }}<form><div class="modal-body">..</div>{{ modal_footer() }}</form></dialog>
+   검증 오류로 다시 그릴 때는 등장 애니메이션을 끈다. #}
+{% macro modal_attrs(errors) -%}
+class="modal" aria-modal="true" {% if errors %}style="animation:none"{% endif %}
+{%- endmacro %}
+
+{% macro modal_header(title) -%}
+<div class="modal-header">
+  <h2>{{ title }}</h2>
+  <button type="button" class="modal-close" aria-label="닫기" onclick="this.closest('dialog').close()">{{ icon('x') }}</button>
+</div>
+{%- endmacro %}
+
+{% macro modal_footer(submit="저장") -%}
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" onclick="this.closest('dialog').close()">취소</button>
+  <button type="submit" class="btn">{{ submit }}</button>
+</div>
+{%- endmacro %}
+
+{% macro status_badge(status) -%}
+<span class="badge {{ status }}">{{ STATUS_LABELS[status] }}</span>
+{%- endmacro %}
+
+{# 아이콘: 24x24, stroke 기반 #}
+{% macro icon(name) -%}
+<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == 'home' -%}<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>
+{%- elif name == 'check' -%}<rect x="3" y="3" width="18" height="18" rx="5"/><path d="m8 12 3 3 5-6"/>
+{%- elif name == 'users' -%}<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.8.8 3 2.6 3.5 5.2"/>
+{%- elif name == 'calendar' -%}<rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
+{%- elif name == 'menu' -%}<path d="M4 6h16M4 12h16M4 18h16"/>
+{%- elif name == 'search' -%}<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+{%- elif name == 'plus' -%}<path d="M12 5v14M5 12h14"/>
+{%- elif name == 'x' -%}<path d="M6 6l12 12M18 6 6 18"/>
+{%- elif name == 'chevron-left' -%}<path d="m15 18-6-6 6-6"/>
+{%- elif name == 'chevron-right' -%}<path d="m9 18 6-6-6-6"/>
+{%- elif name == 'upload' -%}<path d="M12 16V4M7 9l5-5 5 5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+{%- elif name == 'download' -%}<path d="M12 4v12M7 11l5 5 5-5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+{%- endif -%}
+</svg>
+{%- endmacro %}

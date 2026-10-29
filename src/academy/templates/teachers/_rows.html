@@ -1,0 +1,14 @@
+{% for u in users %}
+<tr {% if not u.active %}class="inactive"{% endif %}>
+  <td><span class="name">{{ u.name }}</span>{% if u.id == user.id %} <span class="badge">나</span>{% endif %}
+      {% if not u.active %} <span class="badge badge-grey">비활성</span>{% endif %}
+      <div class="m-only desc">{{ [u.subject, u.email]|select|join(' · ') }}</div></td>
+  <td class="d-only">{{ u.email }}</td>
+  <td>{% if u.role == 'admin' %}<span class="badge badge-blue">원장</span>{% else %}<span class="badge">강사</span>{% endif %}</td>
+  <td class="d-only">{{ u.subject or '' }}</td>
+  <td class="d-only">{{ classes.get(u.id, [])|join(', ') or '-' }}</td>
+  <td class="actions"><button class="btn btn-secondary btn-sm" hx-get="/teachers/{{ u.id }}/edit" hx-target="#modal">수정</button></td>
+</tr>
+{% else %}
+<tr><td colspan="6" class="empty">등록된 계정이 없어요</td></tr>
+{% endfor %}

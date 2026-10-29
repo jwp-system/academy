@@ -1,0 +1,4 @@
+{% for s in students %}{% include "students/_row.html" %}
+{% else %}
+<tr><td colspan="6" class="empty">{{ '검색 결과가 없어요' if q else '아직 등록된 학생이 없어요' }}</td></tr>
+{% endfor %}

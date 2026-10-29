@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>학생</h1>
+    <p class="sub">재원생 관리와 보호자 연락처</p>
+  </div>
+  {% if user.role == 'admin' %}
+  <div class="actions">
+    <a href="/students/import" class="btn btn-secondary">{{ icon('upload') }}엑셀 가져오기</a>
+    <button type="button" class="btn" hx-get="/students/new" hx-target="#modal">{{ icon('plus') }}학생 등록</button>
+  </div>
+  {% endif %}
+</div>
+
+<form id="filters" hx-get="/students" hx-target="#rows" hx-trigger="input delay:300ms, change" onsubmit="return false">
+  <div class="toolbar">
+    <label class="search">
+      {{ icon('search') }}
+      <input class="input" type="search" name="q" value="{{ q }}" placeholder="이름, 학교, 입금자명으로 검색" aria-label="검색">
+    </label>
+  </div>
+  <div class="chips toolbar">
+    {% for value, text in [('', '재원·휴원'), ('active', '재원'), ('paused', '휴원'), ('withdrawn', '퇴원'), ('all', '전체')] %}
+    <label><input type="radio" name="status" value="{{ value }}" {% if status == value %}checked{% endif %}><span>{{ text }}</span></label>
+    {% endfor %}
+  </div>
+</form>
+
+<div class="card flush">
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>이름</th><th class="d-only">학교 · 학년</th><th class="d-only">연락처</th><th>상태</th><th class="d-only">입금자명</th><th></th></tr></thead>
+      <tbody id="rows" hx-get="/students" hx-trigger="studentSaved from:body" hx-include="#filters">
+        {% include "students/_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon %}
+{% block page_class %}page-narrow{% endblock %}
+{% block content %}
+<a class="back" href="/students">{{ icon('chevron-left') }}학생 목록</a>
+<div class="page-header">
+  <div>
+    <h1>엑셀로 학생 한 번에 등록하기</h1>
+    <p class="sub">기존 명단을 양식에 옮겨 올려 주세요</p>
+  </div>
+</div>
+<div class="card">
+  <ol class="steps">
+    <li><strong>양식을 내려받아요.</strong><br>첫 줄 머리글은 그대로 두고, 열 순서는 바꿔도 괜찮아요.</li>
+    <li><strong>한 줄에 학생 한 명씩 적어요.</strong><br>이름만 필수예요. 보호자는 한 명까지 함께 등록돼요.</li>
+    <li><strong>상태 칸</strong>은 재원·휴원·퇴원 중 하나로, 비우면 재원이에요.</li>
+    <li><strong>파일을 올려요.</strong><br>오류가 하나라도 있으면 아무것도 등록하지 않고 알려 드려요. 이름과 연락처가 같은 학생은 건너뛰어요.</li>
+  </ol>
+  <a href="/students/import/template.xlsx" class="btn btn-weak" style="margin-bottom:20px">{{ icon('download') }}양식 내려받기</a>
+  <form hx-post="/students/import" hx-encoding="multipart/form-data" hx-target="#result" hx-disabled-elt="find button">
+    <div class="dropzone">
+      <input type="file" name="file" accept=".xlsx" required>
+      <button type="submit" class="btn">가져오기</button>
+    </div>
+  </form>
+</div>
+<div id="result" style="margin-top:16px"></div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% from "macros.html" import field, select, checkbox, modal_attrs, modal_header, modal_footer %}
+<dialog {{ modal_attrs(errors) }}>
+  {{ modal_header('계정 수정' if target else '강사 등록') }}
+  <form {% if target %}hx-put="/teachers/{{ target.id }}"{% else %}hx-post="/teachers"{% endif %}
+        hx-target="closest dialog" hx-swap="outerHTML">
+    <div class="modal-body">
+      <p class="modal-desc">담당 반은 반·시간표 화면에서 정할 수 있어요.</p>
+      <div class="grid-2">
+        {{ field('name', '이름', form, errors, required=True) }}
+        {{ field('subject', '담당 과목', form, errors, placeholder='예: 수학') }}
+      </div>
+      {{ field('email', '이메일', form, errors, type='email', required=True, help='로그인할 때 쓰는 아이디예요') }}
+      {{ field('password', '비밀번호' if not target else '새 비밀번호', form, errors, type='password',
+               required=not target, help='8자 이상' if not target else '바꿀 때만 입력해 주세요 (8자 이상)') }}
+      {{ select('role', '권한', form, errors, [('teacher', '강사 — 담당 반만 볼 수 있어요'), ('admin', '원장 — 모든 메뉴를 쓸 수 있어요')]) }}
+      {{ checkbox('active', '계정 사용 (끄면 로그인할 수 없어요)', form) }}
+    </div>
+    {{ modal_footer('저장하기' if target else '등록하기') }}
+  </form>
+</dialog>

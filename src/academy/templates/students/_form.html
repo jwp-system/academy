@@ -1,0 +1,22 @@
+{% from "macros.html" import field, select, textarea, modal_attrs, modal_header, modal_footer %}
+<dialog {{ modal_attrs(errors) }}>
+  {{ modal_header('학생 정보 수정' if student else '학생 등록') }}
+  <form {% if student %}hx-put="/students/{{ student.id }}"{% else %}hx-post="/students"{% endif %}
+        hx-target="closest dialog" hx-swap="outerHTML">
+    <div class="modal-body">
+      {% if not student %}<p class="modal-desc">입금자명과 학부모 조회 링크는 자동으로 만들어져요. 보호자는 등록 후 상세 화면에서 추가해 주세요.</p>{% endif %}
+      <div class="grid-2">
+        {{ field('name', '이름', form, errors, required=True) }}
+        {{ select('status', '상태', form, errors, [('active', '재원'), ('paused', '휴원'), ('withdrawn', '퇴원')]) }}
+        {{ field('school', '학교', form, errors, placeholder='예: 한빛중') }}
+        {{ field('grade', '학년', form, errors, placeholder='예: 중2') }}
+      </div>
+      {{ field('phone', '학생 연락처', form, errors, type='tel', placeholder='010-0000-0000') }}
+      {% if student %}
+      {{ field('payer_code', '입금자명', form, errors, required=True, help='학부모님께 안내된 이름이라 바꿀 때는 꼭 다시 알려 주세요.') }}
+      {% endif %}
+      {{ textarea('memo', '메모', form, errors) }}
+    </div>
+    {{ modal_footer('저장하기' if student else '등록하기') }}
+  </form>
+</dialog>

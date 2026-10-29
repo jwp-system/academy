@@ -1,0 +1,20 @@
+<dl class="kv">
+  <div><dt>학교 · 학년</dt><dd>{{ student.school or '-' }} {{ student.grade or '' }}</dd></div>
+  <div><dt>연락처</dt><dd class="num">{{ student.phone|phone or '-' }}</dd></div>
+  <div><dt>등록일</dt><dd class="num">{{ student.enrolled_at }}</dd></div>
+  {% if student.withdrawn_at %}<div><dt>퇴원일</dt><dd class="num">{{ student.withdrawn_at }}</dd></div>{% endif %}
+  <div><dt>입금자명</dt><dd>{{ student.payer_code }}</dd></div>
+  {% if student.memo %}<div><dt>메모</dt><dd class="pre" style="font-weight:400">{{ student.memo }}</dd></div>{% endif %}
+  {% if user.role == 'admin' %}
+  <div>
+    <dt>학부모 조회 링크</dt>
+    <dd>
+      <code>{{ request.base_url }}p/{{ student.view_token }}</code>
+      <button class="btn btn-secondary btn-sm" type="button"
+              onclick="navigator.clipboard.writeText('{{ request.base_url }}p/{{ student.view_token }}').then(() => toast('링크를 복사했어요'))">복사</button>
+      <button class="btn btn-ghost btn-sm" hx-post="/students/{{ student.id }}/token" hx-target="#info"
+              hx-confirm="새 링크를 만들면 기존 링크는 더 이상 열리지 않아요.&#10;재발급할까요?" data-confirm-ok="재발급">재발급</button>
+    </dd>
+  </div>
+  {% endif %}
+</dl>

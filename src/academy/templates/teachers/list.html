@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>강사</h1>
+    <p class="sub">로그인 계정과 담당 과목</p>
+  </div>
+  <div class="actions">
+    <button type="button" class="btn" hx-get="/teachers/new" hx-target="#modal">{{ icon('plus') }}강사 등록</button>
+  </div>
+</div>
+<form id="filters" class="toolbar" hx-get="/teachers" hx-target="#rows" hx-trigger="change">
+  <label class="check" style="margin:0"><input type="checkbox" name="show_inactive" value="true" {% if show_inactive %}checked{% endif %}>비활성 계정도 보기</label>
+</form>
+<div class="card flush">
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>이름</th><th class="d-only">이메일</th><th>권한</th><th class="d-only">담당 과목</th><th class="d-only">담당 반</th><th></th></tr></thead>
+      <tbody id="rows" hx-get="/teachers" hx-trigger="teacherSaved from:body" hx-include="#filters">
+        {% include "teachers/_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

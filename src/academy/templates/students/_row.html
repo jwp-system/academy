@@ -1,0 +1,22 @@
+{% from "macros.html" import status_badge %}
+<tr>
+  {% set school = [s.school, s.grade]|select|join(' · ') %}
+  <td>
+    <a class="name" href="/students/{{ s.id }}">{{ s.name }}</a>
+    <div class="m-only desc">{{ school }}{% if school and s.phone %} · {% endif %}<span class="nowrap">{{ s.phone|phone }}</span></div>
+  </td>
+  <td class="d-only">{{ school }}</td>
+  <td class="d-only num">{{ s.phone|phone }}</td>
+  <td>{{ status_badge(s.status) }}</td>
+  <td class="d-only">{{ s.payer_code }}</td>
+  <td class="actions">
+    {% if user.role == 'admin' %}
+    <button class="btn btn-secondary btn-sm" hx-get="/students/{{ s.id }}/edit" hx-target="#modal">수정</button>
+    {% if s.status != 'withdrawn' %}
+    <button class="btn btn-danger btn-sm" hx-delete="/students/{{ s.id }}"
+            hx-confirm="{{ s.name }} 학생을 퇴원 처리할까요?&#10;기록은 그대로 남아요." data-confirm-ok="퇴원 처리" data-confirm-danger
+            hx-target="closest tr" hx-swap="outerHTML">퇴원</button>
+    {% endif %}
+    {% endif %}
+  </td>
+</tr>

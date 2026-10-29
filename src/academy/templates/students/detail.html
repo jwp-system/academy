@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon, status_badge %}
+{% block title %}{{ student.name }} · {{ academy_name }}{% endblock %}
+{% block content %}
+<a class="back" href="/students">{{ icon('chevron-left') }}학생 목록</a>
+<div class="page-header">
+  <div>
+    <h1 style="display:flex;align-items:center;gap:10px">
+      {{ student.name }}
+      <span hx-get="/students/{{ student.id }}" hx-trigger="studentSaved from:body" hx-select=".badge" hx-swap="innerHTML">{{ status_badge(student.status) }}</span>
+    </h1>
+    <p class="sub">{{ student.school or '' }} {{ student.grade or '' }}</p>
+  </div>
+  {% if user.role == 'admin' %}
+  <div class="actions">
+    <button class="btn btn-secondary" hx-get="/students/{{ student.id }}/edit" hx-target="#modal">정보 수정</button>
+  </div>
+  {% endif %}
+</div>
+
+{% set tabs = [('info', '정보'), ('classes', '수강'), ('attendance', '출결')] %}
+{% if user.role == 'admin' %}{% set tabs = tabs + [('billing', '수납'), ('notifications', '알림 이력')] %}{% endif %}
+{% set tabs = tabs + [('consultations', '상담')] %}
+{% set att = {'present': ('출석', 'blue'), 'late': ('지각', 'orange'), 'absent': ('결석', 'red'), 'excused': ('공결', 'grey')} %}
+{% set inv = {'unpaid': ('미납', 'red'), 'paid': ('완납', 'blue'), 'partial': ('부분 납부', 'orange')} %}
+{% set noti = {'pending': ('대기', 'grey'), 'sent': ('발송', 'blue'), 'failed': ('실패', 'red'), 'cancelled': ('취소', 'grey')} %}
+{% macro b(map, key) %}<span class="badge badge-{{ map[key][1] }}">{{ map[key][0] }}</span>{% endmacro %}
+
+<div x-data="{ tab: 'info' }">
+  <nav class="tabs" role="tablist">
+    {% for key, label in tabs %}
+    <button type="button" role="tab" :class="tab === '{{ key }}' && 'active'" @click="tab = '{{ key }}'">{{ label }}</button>
+    {% endfor %}
+  </nav>
+
+  <section x-show="tab === 'info'">
+    <div class="card">
+      <div class="card-header"><h3>기본 정보</h3></div>
+      <div id="info" hx-get="/students/{{ student.id }}/info" hx-trigger="studentSaved from:body">
+        {% include "students/_info.html" %}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>보호자</h3></div>
+      {% include "students/_guardians.html" %}
+    </div>
+  </section>
+
+  <section x-show="tab === 'classes'" x-cloak>
+    <div class="card flush"><div class="table-wrap"><table class="table">
+      <thead><tr><th>반</th><th>과목</th><th>시작</th><th>종료</th></tr></thead>
+      <tbody>
+      {% for e, c in enrollments %}
+        <tr><td class="name">{{ c.name }}</td><td>{{ c.subject or '' }}</td><td class="num">{{ e.start_date }}</td>
+            <td>{% if e.end_date %}<span class="num">{{ e.end_date }}</span>{% else %}<span class="badge badge-blue">수강 중</span>{% endif %}</td></tr>
+      {% else %}<tr><td colspan="4" class="empty">수강 이력이 없어요</td></tr>{% endfor %}
+      </tbody>
+    </table></div></div>
+  </section>
+
+  <section x-show="tab === 'attendance'" x-cloak>
+    <div class="card flush"><div class="table-wrap"><table class="table">
+      <thead><tr><th>날짜</th><th>반</th><th>출결</th><th>메모</th></tr></thead>
+      <tbody>
+      {% for a, s, c in attendances %}
+        <tr><td class="num">{{ s.date }}</td><td>{{ c.name }}</td><td>{{ b(att, a.status) }}</td><td>{{ a.memo or '' }}</td></tr>
+      {% else %}<tr><td colspan="4" class="empty">출결 기록이 없어요</td></tr>{% endfor %}
+      </tbody>
+    </table></div></div>
+    {% if attendances %}<p class="muted small" style="margin-top:8px">최근 50건까지 보여요</p>{% endif %}
+  </section>
+
+  {% if user.role == 'admin' %}
+  <section x-show="tab === 'billing'" x-cloak>
+    <div class="card flush"><div class="table-wrap"><table class="table">
+      <thead><tr><th>청구월</th><th>금액</th><th>할인</th><th>납부일</th><th>상태</th></tr></thead>
+      <tbody>
+      {% for i in invoices %}
+        <tr><td class="name">{{ i.year_month }}</td><td class="num">{{ '{:,}'.format(i.amount) }}원</td>
+            <td class="num">{{ '{:,}'.format(i.discount) }}원</td><td class="num">{{ i.due_date }}</td><td>{{ b(inv, i.status) }}</td></tr>
+      {% else %}<tr><td colspan="5" class="empty">청구 내역이 없어요</td></tr>{% endfor %}
+      </tbody>
+    </table></div></div>
+  </section>
+
+  <section x-show="tab === 'notifications'" x-cloak>
+    <div class="card flush"><div class="table-wrap"><table class="table">
+      <thead><tr><th>예정 시각</th><th>받는 곳</th><th>상태</th><th>내용</th></tr></thead>
+      <tbody>
+      {% for n in notifications %}
+        <tr><td class="num">{{ n.scheduled_at.strftime('%m.%d %H:%M') }}</td><td class="num">{{ n.to|phone }}</td>
+            <td>{{ b(noti, n.status) }}</td><td>{{ n.body }}</td></tr>
+      {% else %}<tr><td colspan="4" class="empty">보낸 알림이 없어요</td></tr>{% endfor %}
+      </tbody>
+    </table></div></div>
+  </section>
+  {% endif %}
+
+  <section x-show="tab === 'consultations'" x-cloak>
+    <div class="card">
+      {% include "students/_consultations.html" %}
+    </div>
+  </section>
+</div>
+{% endblock %}

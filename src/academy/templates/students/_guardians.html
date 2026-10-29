@@ -1,0 +1,41 @@
+{% from "macros.html" import field, checkbox, icon %}
+<div id="guardians" x-data="{ adding: {{ 'true' if errors else 'false' }} }">
+  {% for g in guardians %}
+  <div class="list-item">
+    <span class="avatar">{{ g.name[:1] }}</span>
+    <div class="main">
+      <div class="title">{{ g.name }} {% if g.relation %}<span class="muted" style="font-weight:500">· {{ g.relation }}</span>{% endif %}</div>
+      <div class="desc num">{{ g.phone|phone or '연락처 없음' }}{% if g.email %} · {{ g.email }}{% endif %}</div>
+    </div>
+    {% if g.notify_sms %}<span class="badge badge-blue">문자</span>{% endif %}
+    {% if g.notify_email %}<span class="badge badge-green">이메일</span>{% endif %}
+    {% if user.role == 'admin' %}
+    <button class="btn btn-secondary btn-sm" hx-get="/students/{{ student.id }}/guardians/{{ g.id }}/edit"
+            hx-target="closest .list-item" hx-swap="outerHTML">수정</button>
+    <button class="btn btn-ghost btn-sm" hx-delete="/students/{{ student.id }}/guardians/{{ g.id }}"
+            hx-confirm="보호자 {{ g.name }}님을 삭제할까요?" data-confirm-ok="삭제" data-confirm-danger
+            hx-target="#guardians" hx-swap="outerHTML">삭제</button>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="muted" x-show="!adding">등록된 보호자가 없어요. 알림을 받을 보호자를 추가해 주세요.</p>
+  {% endfor %}
+
+  {% if user.role == 'admin' %}
+  <button type="button" class="btn btn-weak" style="margin-top:12px" x-show="!adding" @click="adding = true">{{ icon('plus') }}보호자 추가</button>
+  <form class="subform" x-show="adding" x-cloak hx-post="/students/{{ student.id }}/guardians" hx-target="#guardians" hx-swap="outerHTML">
+    <div class="grid-2">
+      {{ field('name', '이름', form, errors, required=True) }}
+      {{ field('relation', '관계', form, errors, placeholder='예: 어머니') }}
+      {{ field('phone', '연락처', form, errors, type='tel', placeholder='010-0000-0000') }}
+      {{ field('email', '이메일', form, errors, type='email') }}
+    </div>
+    {{ checkbox('notify_sms', '문자 알림 받기', form if errors else {'notify_sms': true}) }}
+    {{ checkbox('notify_email', '이메일 알림 받기', form) }}
+    <div class="toolbar" style="margin:16px 0 0">
+      <button type="button" class="btn btn-secondary" @click="adding = false">취소</button>
+      <button type="submit" class="btn">추가하기</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
