@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon, classes_subnav %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>반·시간표</h1>
+    <p class="sub">{{ '반을 만들고 정규 시간표를 정하면 회차가 자동으로 만들어져요' if user.role == 'admin' else '내가 맡은 반' }}</p>
+  </div>
+  {% if user.role == 'admin' %}
+  <div class="actions">
+    <button type="button" class="btn btn-secondary" hx-post="/classes/generate" hx-swap="none">앞으로 4주 회차 채우기</button>
+    <button type="button" class="btn" hx-get="/classes/new" hx-target="#modal">{{ icon('plus') }}반 만들기</button>
+  </div>
+  {% endif %}
+</div>
+{{ classes_subnav('list') }}
+{% if user.role == 'admin' %}
+<form id="filters" class="toolbar" hx-get="/classes" hx-target="#rows" hx-trigger="change">
+  <label class="check" style="margin:0"><input type="checkbox" name="show_inactive" value="true" {% if show_inactive %}checked{% endif %}>운영 종료한 반도 보기</label>
+</form>
+{% endif %}
+<div class="card flush">
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>반</th><th class="d-only">강사</th><th>정규 시간표</th><th class="d-only">강의실</th><th class="d-only">수강생</th><th class="d-only">수강료</th></tr></thead>
+      <tbody id="rows" hx-get="/classes" hx-trigger="classSaved from:body" hx-include="#filters">
+        {% include "classes/_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

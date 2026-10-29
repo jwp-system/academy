@@ -1,8 +1,9 @@
 {# 폼 필드. form: 입력값 dict, errors: {필드명: 메시지} #}
-{% macro field(name, label, form, errors, type="text", required=False, help=None, placeholder="") -%}
+{% macro field(name, label, form, errors, type="text", required=False, help=None, placeholder="", datalist=None) -%}
 <label class="field">
   <span class="field-label">{{ label }}{% if required %}<span class="req">*</span>{% endif %}</span>
-  <input type="{{ type }}" name="{{ name }}" placeholder="{{ placeholder }}"
+  {% if datalist is not none %}<datalist id="dl-{{ name }}">{% for v in datalist %}<option value="{{ v }}">{% endfor %}</datalist>{% endif %}
+  <input type="{{ type }}" name="{{ name }}" placeholder="{{ placeholder }}" {% if datalist is not none %}list="dl-{{ name }}" autocomplete="off"{% endif %}
          value="{{ '' if type == 'password' else (form.get(name) if form.get(name) is not none else '') }}"
          {% if required %}required{% endif %}
          {% if name in errors %}aria-invalid="true"{% endif %}>
@@ -77,4 +78,24 @@ class="modal" aria-modal="true" {% if errors %}style="animation:none"{% endif %}
 {%- elif name == 'download' -%}<path d="M12 4v12M7 11l5 5 5-5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
 {%- endif -%}
 </svg>
+{%- endmacro %}
+
+{# 시간 겹침 경고. conflicts가 있으면 경고를 보여주고 다음 제출은 force=1로 보낸다. #}
+{% macro conflict_warning(conflicts) -%}
+{% if conflicts %}
+<div class="alert alert-warning">
+  <strong>시간이 겹쳐요</strong>
+  <ul>{% for c in conflicts %}<li>{{ c }}</li>{% endfor %}</ul>
+  <span>그래도 저장하려면 한 번 더 눌러 주세요.</span>
+</div>
+<input type="hidden" name="force" value="1">
+{% endif %}
+{%- endmacro %}
+
+{# 반 목록 / 주간 시간표 전환 #}
+{% macro classes_subnav(active) -%}
+<nav class="segmented" aria-label="반·시간표">
+  <a href="/classes" class="{{ 'active' if active == 'list' }}">반 목록</a>
+  <a href="/classes/calendar" class="{{ 'active' if active == 'calendar' }}">주간 시간표</a>
+</nav>
 {%- endmacro %}

@@ -10,11 +10,13 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+  {# 속성 상속을 끈다: 바깥 요소의 hx-swap/hx-target 등이 안쪽 버튼에 몰래 적용되지 않게. CSRF 헤더만 body에서 상속. #}
+  <meta name="htmx-config" content='{"disableInheritance": true}'>
   <script src="{{ url_for('static', path='js/htmx.min.js') }}"></script>
   <script defer src="{{ url_for('static', path='js/alpine.min.js') }}"></script>
   <script defer src="{{ url_for('static', path='js/app.js') }}"></script>
 </head>
-<body hx-headers='{"X-CSRF-Token": "{{ csrf_token(request) }}"}'>
+<body hx-headers='{"X-CSRF-Token": "{{ csrf_token(request) }}"}' hx-inherit="hx-headers">
   {% if user %}
   {% set path = request.url.path %}
   {% set nav = [('/', '홈', 'home'), ('/attendance', '출결', 'check'), ('/students', '학생', 'users'), ('/classes', '반·시간표', 'calendar')] %}

@@ -1,0 +1,29 @@
+{% from "macros.html" import field, select, modal_attrs, modal_header, modal_footer, conflict_warning %}
+<dialog {{ modal_attrs(errors or conflicts) }}>
+  {{ modal_header(('회차 수정' if session else '보강 회차 추가')) }}
+  <form {% if session %}hx-put="/classes/sessions/{{ session.id }}"{% else %}hx-post="/classes/{{ cls.id }}/sessions"{% endif %}
+        hx-target="closest dialog" hx-swap="outerHTML">
+    <div class="modal-body">
+      <p class="modal-desc">{{ cls.name }}{% if session %} · 이 회차만 바뀌고 정규 시간표는 그대로예요{% else %} · 정규 시간표와 별도로 한 번만 열리는 수업이에요{% endif %}</p>
+      {{ conflict_warning(conflicts) }}
+      <label class="field">
+        <span class="field-label">날짜<span class="req">*</span></span>
+        <input type="date" name="date" value="{{ form.get('date') or '' }}" required {% if 'date' in errors %}aria-invalid="true"{% endif %}>
+        {% if 'date' in errors %}<span class="field-error">{{ errors['date'] }}</span>{% endif %}
+      </label>
+      <div class="grid-2">
+        {% for k, label in [('start_time', '시작'), ('end_time', '끝')] %}
+        <label class="field">
+          <span class="field-label">{{ label }}<span class="req">*</span></span>
+          <input type="time" name="{{ k }}" value="{{ form.get(k)|hm }}" step="300" required {% if k in errors %}aria-invalid="true"{% endif %}>
+          {% if k in errors %}<span class="field-error">{{ errors[k] }}</span>{% endif %}
+        </label>
+        {% endfor %}
+        {{ field('room', '강의실', form, errors, datalist=rooms) }}
+        {{ select('teacher_id', '강사', form, errors, teacher_options) }}
+      </div>
+      {{ field('note', '메모', form, errors, placeholder='예: 시험 대비 보강, 대강(이수학)') }}
+    </div>
+    {{ modal_footer('겹쳐도 저장' if conflicts else ('저장하기' if session else '만들기')) }}
+  </form>
+</dialog>

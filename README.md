@@ -26,7 +26,7 @@ src/academy/
 ├─ routers/         화면별 라우터 (webhooks, public은 세션/CSRF 미적용)
 ├─ services/        회차·청구 생성, 입금 매칭, 알림 outbox와 채널 어댑터, 엑셀
 ├─ templates/       base.html, 화면별 전체 페이지와 _partial 조각
-└─ static/          htmx, alpine (로컬 보관), css/app.css 디자인 시스템, js/app.js(모달·토스트·확인창)
+└─ static/          htmx, alpine, fullcalendar (로컬 보관), css/app.css 디자인 시스템, js/app.js(모달·토스트·확인창)
 alembic/            마이그레이션
 data/               SQLite DB (커밋 안 함)
 ```

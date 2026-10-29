@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "macros.html" import classes_subnav %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>반·시간표</h1>
+    <p class="sub">{{ '수업을 누르면 이 회차만 바꿀 수 있어요' if user.role == 'admin' else '내 수업 일정' }}</p>
+  </div>
+</div>
+{{ classes_subnav('calendar') }}
+<form id="cal-filters" class="toolbar">
+  {% if user.role == 'admin' %}
+  <label class="field" style="margin:0;min-width:160px">
+    <select name="teacher_id" aria-label="강사"><option value="">강사 전체</option>
+      {% for v, t in teacher_options %}<option value="{{ v }}">{{ t }}</option>{% endfor %}</select>
+  </label>
+  {% endif %}
+  <label class="field" style="margin:0;min-width:160px">
+    <select name="room" aria-label="강의실"><option value="">강의실 전체</option>
+      {% for r in rooms %}<option value="{{ r }}">{{ r }}</option>{% endfor %}</select>
+  </label>
+</form>
+<div class="card calendar-card">
+  <div id="calendar"></div>
+</div>
+
+<script src="{{ url_for('static', path='js/fullcalendar.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/fullcalendar-ko.js') }}"></script>
+<script>
+(() => {
+  const isAdmin = {{ 'true' if user.role == 'admin' else 'false' }};
+  const filters = document.getElementById("cal-filters");
+  const mobile = window.matchMedia("(max-width: 768px)").matches;
+  const cal = new FullCalendar.Calendar(document.getElementById("calendar"), {
+    locale: "ko",
+    initialView: mobile ? "listWeek" : "timeGridWeek",
+    headerToolbar: mobile
+      ? { left: "prev,next", center: "title", right: "today" }
+      : { left: "prev,next today", center: "title", right: "timeGridWeek,timeGridDay,listWeek" },
+    buttonText: { today: "오늘", week: "주", day: "일", list: "목록" },
+    firstDay: 1,
+    allDaySlot: false,
+    slotMinTime: "09:00:00",
+    slotMaxTime: "23:00:00",
+    slotDuration: "00:30:00",
+    expandRows: true,
+    height: "auto",
+    nowIndicator: true,
+    dayHeaderFormat: { weekday: "short", day: "numeric" },
+    eventTimeFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
+    slotLabelFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
+    events: { url: "/classes/events", extraParams: () => Object.fromEntries(new FormData(filters)) },
+    eventContent: (arg) => {
+      const p = arg.event.extendedProps;
+      const meta = [p.room, p.teacher].filter(Boolean).join(" · ");
+      if (arg.view.type.startsWith("list")) return { html: `<b>${escapeHtml(arg.event.title)}</b> <span class="muted">${escapeHtml(meta)}</span>` };
+      return { html: `<div class="fc-event-title">${escapeHtml(arg.event.title)}</div><div class="ev-meta">${arg.timeText}</div><div class="ev-meta">${escapeHtml(meta)}</div>` };
+    },
+    eventClick: (info) => {
+      if (isAdmin) htmx.ajax("GET", `/classes/sessions/${info.event.id}/edit`, { target: "#modal" });
+      else window.location.href = `/classes/${info.event.extendedProps.classId}`;
+    },
+  });
+  cal.render();
+  filters.addEventListener("change", () => cal.refetchEvents());
+  document.body.addEventListener("sessionSaved", () => cal.refetchEvents());
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% from "macros.html" import field, select, checkbox, modal_attrs, modal_header, modal_footer, conflict_warning %}
+<dialog {{ modal_attrs(errors or conflicts) }}>
+  {{ modal_header('반 정보 수정' if cls else '반 만들기') }}
+  <form {% if cls %}hx-put="/classes/{{ cls.id }}"{% else %}hx-post="/classes"{% endif %}
+        hx-target="closest dialog" hx-swap="outerHTML">
+    <div class="modal-body">
+      {{ conflict_warning(conflicts) }}
+      <div class="grid-2">
+        {{ field('name', '반 이름', form, errors, required=True, placeholder='예: 중2 수학 A') }}
+        {{ field('subject', '과목', form, errors, placeholder='예: 수학') }}
+        {{ select('teacher_id', '담당 강사', form, errors, teacher_options) }}
+        {{ field('room', '강의실', form, errors, placeholder='예: 1강의실', datalist=rooms) }}
+        {{ field('capacity', '정원', form, errors, type='number', help='비우면 제한 없음') }}
+        {{ field('monthly_fee', '월 수강료', form, errors, placeholder='예: 280,000', help='원 단위') }}
+      </div>
+      {% if cls %}
+      {{ checkbox('active', '운영 중 (끄면 앞으로의 회차가 지워져요)', form) }}
+      <p class="field-help" style="margin-top:-4px">강사·강의실을 바꾸면 아직 손대지 않은 앞으로의 회차에도 반영돼요.</p>
+      {% endif %}
+    </div>
+    {{ modal_footer('겹쳐도 저장' if conflicts else ('저장하기' if cls else '만들기')) }}
+  </form>
+</dialog>

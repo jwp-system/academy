@@ -171,6 +171,10 @@ class ClassSession(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     class_id: int = Field(foreign_key="classes.id", index=True)
+    # 정규 시간표에서 자동 생성된 회차만 값이 있다. 보강 등 수동 회차는 None.
+    schedule_id: int | None = Field(
+        default=None, foreign_key="class_schedules.id", ondelete="SET NULL", index=True
+    )
     date: dt.date = Field(index=True)
     start_time: time
     end_time: time

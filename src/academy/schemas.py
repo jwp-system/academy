@@ -1,9 +1,18 @@
 """폼 입력 검증 (Pydantic). HTML 폼과 엑셀 가져오기가 같은 스키마를 쓴다."""
 
+import datetime as dt
 import re
+from datetime import time
 from typing import Any
 
-from pydantic import BaseModel, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from academy.models import Role, StudentStatus
 
@@ -12,6 +21,13 @@ _MESSAGES = {
     "string_too_short": "꼭 입력해 주세요.",
     "string_too_long": "너무 길어요.",
     "enum": "목록에서 골라 주세요.",
+    "int_parsing": "숫자만 입력해 주세요.",
+    "greater_than_equal": "더 큰 값을 입력해 주세요.",
+    "less_than_equal": "더 작은 값을 입력해 주세요.",
+    "time_parsing": "시각을 확인해 주세요.",
+    "time_type": "시각을 확인해 주세요.",
+    "date_parsing": "날짜를 확인해 주세요.",
+    "date_from_datetime_parsing": "날짜를 확인해 주세요.",
 }
 
 
@@ -116,3 +132,54 @@ class TeacherIn(FormModel):
         if v is not None and len(v) < 8:
             raise ValueError("비밀번호는 8자 이상이어야 해요.")
         return v
+
+
+def _parse_won(v: Any) -> Any:
+    """'280,000' / '280000원' → 280000"""
+    if isinstance(v, str):
+        digits = re.sub(r"[,\s원]", "", v)
+        if not digits.isdigit():
+            raise ValueError("숫자만 입력해 주세요.")
+        return int(digits)
+    return v
+
+
+class ClassIn(FormModel):
+    name: str
+    subject: str | None = None
+    teacher_id: int | None = None
+    room: str | None = None
+    capacity: int | None = Field(default=None, ge=1)
+    monthly_fee: int = Field(default=0, ge=0)
+    active: bool = False
+
+    _fee = field_validator("monthly_fee", mode="before")(_parse_won)
+
+
+class TimeRange(FormModel):
+    start_time: time
+    end_time: time
+
+    @field_validator("end_time")
+    @classmethod
+    def _order(cls, v: time, info: ValidationInfo) -> time:
+        start = info.data.get("start_time")
+        if start and v <= start:
+            raise ValueError("끝나는 시각이 시작 시각보다 늦어야 해요.")
+        return v
+
+
+class ScheduleIn(TimeRange):
+    weekday: int = Field(ge=0, le=6)
+
+
+class SessionIn(TimeRange):
+    date: dt.date
+    room: str | None = None
+    teacher_id: int | None = None
+    note: str | None = None
+
+
+class EnrollIn(FormModel):
+    student_id: int
+    start_date: dt.date = Field(default_factory=dt.date.today)

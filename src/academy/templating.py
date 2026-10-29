@@ -5,9 +5,11 @@ from fastapi import Depends, Request, Response
 from fastapi.templating import Jinja2Templates
 
 from academy.config import BASE_DIR, get_settings
+from academy.services.sessions import class_color
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 templates.env.globals["academy_name"] = get_settings().academy_name
+templates.env.globals["class_color"] = class_color
 templates.env.globals["STATUS_LABELS"] = {"active": "재원", "paused": "휴원", "withdrawn": "퇴원"}
 
 
@@ -20,6 +22,15 @@ def _phone(value: str | None) -> str:
 
 
 templates.env.filters["phone"] = _phone
+
+
+def _hm(value: Any) -> str:
+    """time → "16:00" (input type=time 값). 이미 문자열이면 그대로."""
+    return value.strftime("%H:%M") if hasattr(value, "strftime") else (value or "")
+
+
+templates.env.filters["hm"] = _hm
+templates.env.filters["won"] = lambda v: f"{v:,}원" if isinstance(v, int) else ""
 
 
 def is_htmx(request: Request) -> bool:

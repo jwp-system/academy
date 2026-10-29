@@ -1,0 +1,44 @@
+{% from "macros.html" import icon, conflict_warning %}
+<div id="schedules">
+  <div class="card-header"><h3>정규 시간표</h3></div>
+  <p class="muted small">매주 반복되는 수업 시간이에요. 추가하면 앞으로 4주치 회차가 바로 만들어져요.</p>
+  <div class="slots">
+    {% for s in schedules %}
+    <span class="slot">
+      <span class="day">{{ weekdays[s.weekday] }}</span>
+      <span class="time">{{ s.start_time|hm }} ~ {{ s.end_time|hm }}</span>
+      {% if user.role == 'admin' %}
+      <button class="btn btn-ghost" aria-label="삭제" hx-delete="/classes/{{ cls.id }}/schedules/{{ s.id }}" hx-target="#schedules" hx-swap="outerHTML"
+              hx-confirm="{{ weekdays[s.weekday] }}요일 {{ s.start_time|hm }} 시간표를 지울까요?&#10;출결 기록이 없는 앞으로의 회차도 함께 지워져요." data-confirm-ok="지우기" data-confirm-danger>{{ icon('x') }}</button>
+      {% endif %}
+    </span>
+    {% else %}
+    <p class="muted">아직 시간표가 없어요</p>
+    {% endfor %}
+  </div>
+
+  {% if user.role == 'admin' %}
+  <form class="subform" hx-post="/classes/{{ cls.id }}/schedules" hx-target="#schedules" hx-swap="outerHTML">
+    {{ conflict_warning(s_conflicts) }}
+    <div class="inline-form">
+      <label class="field narrow">
+        <span class="field-label">요일</span>
+        <select name="weekday">
+          {% for d in weekdays %}<option value="{{ loop.index0 }}" {% if s_form.get('weekday')|string == loop.index0|string %}selected{% endif %}>{{ d }}요일</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">시작</span>
+        <input type="time" name="start_time" value="{{ s_form.get('start_time')|hm }}" required step="300" {% if 'start_time' in s_errors %}aria-invalid="true"{% endif %}>
+      </label>
+      <label class="field">
+        <span class="field-label">끝</span>
+        <input type="time" name="end_time" value="{{ s_form.get('end_time')|hm }}" required step="300" {% if 'end_time' in s_errors %}aria-invalid="true"{% endif %}>
+      </label>
+      <button type="submit" class="btn" style="height:48px">{{ '겹쳐도 추가' if s_conflicts else '추가' }}</button>
+    </div>
+    {% for k in ('weekday', 'start_time', 'end_time') %}{% if k in s_errors %}<span class="field-error">{{ s_errors[k] }}</span>{% endif %}{% endfor %}
+    {% if not cls.room and not cls.teacher_id %}<p class="field-help">반에 강의실·강사를 정하면 시간 겹침을 확인해 드려요.</p>{% endif %}
+  </form>
+  {% endif %}
+</div>

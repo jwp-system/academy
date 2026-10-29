@@ -1,0 +1,21 @@
+{% for c in classes %}
+{% set n = counts.get(c.id, 0) %}
+<tr {% if not c.active %}class="inactive"{% endif %}>
+  <td>
+    <span class="color-dot" style="background:{{ class_color(c.id) }}"></span><a class="name" href="/classes/{{ c.id }}">{{ c.name }}</a>
+    {% if not c.active %}<span class="badge badge-grey">운영 종료</span>{% endif %}
+    <div class="desc {{ '' if c.subject else 'm-only' }}">{{ c.subject or '' }}<span class="m-only">{{ teachers.get(c.teacher_id, '강사 미정') }} · {{ n }}명</span></div>
+  </td>
+  <td class="d-only">{{ teachers.get(c.teacher_id, '') or '-' }}</td>
+  <td>
+    {% if schedules.get(c.id) %}<div class="sched-list">{% for s in schedules[c.id] %}<span>{{ s }}</span>{% endfor %}</div>
+    {% else %}<span class="muted small">시간표 없음</span>{% endif %}
+  </td>
+  <td class="d-only">{{ c.room or '-' }}</td>
+  <td class="d-only num">{{ n }}{% if c.capacity %} / {{ c.capacity }}{% endif %}명
+    {% if c.capacity and n > c.capacity %}<span class="badge badge-red">정원 초과</span>{% endif %}</td>
+  <td class="d-only num">{{ c.monthly_fee|won }}</td>
+</tr>
+{% else %}
+<tr><td colspan="6" class="empty">{{ '아직 만든 반이 없어요' if user.role == 'admin' else '맡은 반이 없어요' }}</td></tr>
+{% endfor %}

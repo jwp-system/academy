@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon %}
+{% block title %}{{ cls.name }} · {{ academy_name }}{% endblock %}
+{% block content %}
+<a class="back" href="/classes">{{ icon('chevron-left') }}반 목록</a>
+<div class="page-header">
+  <div>
+    <h1 style="display:flex;align-items:center;gap:10px">
+      <span class="color-dot" style="width:14px;height:14px;margin:0;background:{{ class_color(cls.id) }}"></span>
+      {{ cls.name }}
+      {% if not cls.active %}<span class="badge badge-grey">운영 종료</span>{% endif %}
+    </h1>
+    <p class="sub">{{ [cls.subject, teacher.name if teacher else '강사 미정', cls.room, cls.monthly_fee|won if cls.monthly_fee else None]|select|join(' · ') }}</p>
+  </div>
+  {% if user.role == 'admin' %}
+  <div class="actions">
+    <button class="btn btn-secondary" hx-get="/classes/{{ cls.id }}/edit" hx-target="#modal">반 정보 수정</button>
+  </div>
+  {% endif %}
+</div>
+{# 반 정보가 바뀌면 머리글까지 새로 그린다 #}
+<div hx-get="/classes/{{ cls.id }}" hx-trigger="classSaved from:body" hx-select=".page-header" hx-target=".page-header" hx-swap="outerHTML"></div>
+
+<div x-data="{ tab: 'students' }">
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" :class="tab === 'students' && 'active'" @click="tab = 'students'">수강생</button>
+    <button type="button" role="tab" :class="tab === 'schedule' && 'active'" @click="tab = 'schedule'">정규 시간표</button>
+    <button type="button" role="tab" :class="tab === 'sessions' && 'active'" @click="tab = 'sessions'">회차</button>
+  </nav>
+  <section x-show="tab === 'students'">{% include "classes/_students.html" %}</section>
+  <section x-show="tab === 'schedule'" x-cloak>
+    <div class="card">{% include "classes/_schedules.html" %}</div>
+  </section>
+  <section x-show="tab === 'sessions'" x-cloak>{% include "classes/_sessions.html" %}</section>
+</div>
+{% endblock %}

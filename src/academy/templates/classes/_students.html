@@ -1,0 +1,50 @@
+{% from "macros.html" import icon, status_badge %}
+<div id="students" class="card">
+  <div class="card-header">
+    <h3>수강 중 {{ current|length }}명{% if cls.capacity %} <span class="muted" style="font-weight:500">/ 정원 {{ cls.capacity }}명</span>{% endif %}</h3>
+    {% if cls.capacity and current|length > cls.capacity %}<span class="badge badge-red">정원 초과</span>{% endif %}
+  </div>
+  {% for e, s in current %}
+  <div class="list-item">
+    <span class="avatar">{{ s.name[:1] }}</span>
+    <div class="main">
+      <div class="title"><a href="/students/{{ s.id }}" style="color:inherit">{{ s.name }}</a> {% if s.status != 'active' %}{{ status_badge(s.status) }}{% endif %}</div>
+      <div class="desc">{{ [s.school, s.grade]|select|join(' · ') }}{% if s.school or s.grade %} · {% endif %}<span class="num">{{ e.start_date }}</span>부터{% if e.end_date %} <span class="num">{{ e.end_date }}</span>까지{% endif %}</div>
+    </div>
+    {% if user.role == 'admin' and not e.end_date %}
+    <button class="btn btn-ghost btn-sm" hx-post="/classes/{{ cls.id }}/enrollments/{{ e.id }}/end" hx-target="#students" hx-swap="outerHTML"
+            hx-confirm="{{ s.name }} 학생의 수강을 오늘까지로 종료할까요?" data-confirm-ok="수강 종료" data-confirm-danger>수강 종료</button>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="muted">아직 수강생이 없어요</p>
+  {% endfor %}
+
+  {% if user.role == 'admin' and cls.active %}
+  <div x-data="{ open: false }" style="margin-top:12px">
+    <button type="button" class="btn btn-weak" x-show="!open" @click="open = true; $nextTick(() => $refs.q.focus())">{{ icon('plus') }}수강생 추가</button>
+    <div class="subform" x-show="open" x-cloak>
+      <label class="search">
+        {{ icon('search') }}
+        <input class="input" type="search" name="q" x-ref="q" placeholder="학생 이름이나 학교로 찾기"
+               hx-get="/classes/{{ cls.id }}/enroll-search" hx-trigger="focus once, input changed delay:250ms"
+               hx-target="next .search-results">
+      </label>
+      <div class="search-results"></div>
+      <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" @click="open = false">닫기</button>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if past %}
+  <details style="margin-top:20px">
+    <summary class="muted small" style="cursor:pointer">지난 수강생 {{ past|length }}명</summary>
+    {% for e, s in past %}
+    <div class="list-item">
+      <div class="main"><div class="title" style="font-weight:500">{{ s.name }}</div>
+        <div class="desc num">{{ e.start_date }} ~ {{ e.end_date }}</div></div>
+    </div>
+    {% endfor %}
+  </details>
+  {% endif %}
+</div>

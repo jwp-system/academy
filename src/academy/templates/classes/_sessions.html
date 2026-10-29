@@ -1,0 +1,41 @@
+{% from "macros.html" import icon %}
+{% set st = {'normal': ('정상', 'blue'), 'cancelled': ('휴강', 'grey'), 'makeup': ('보강', 'green')} %}
+<div id="sessions" hx-get="/classes/{{ cls.id }}/sessions" hx-trigger="sessionSaved from:body" hx-swap="outerHTML">
+  {% if user.role == 'admin' %}
+  <div class="toolbar">
+    <span class="muted small">지난 1주 ~ 앞으로 4주</span>
+    <span class="spacer"></span>
+    <button class="btn btn-weak" hx-get="/classes/{{ cls.id }}/sessions/new" hx-target="#modal">{{ icon('plus') }}보강 회차 추가</button>
+  </div>
+  {% endif %}
+  <div class="card flush"><div class="table-wrap"><table class="table">
+    <thead><tr><th>날짜</th><th>시간</th><th class="d-only">강의실</th><th class="d-only">강사</th><th>상태</th>{% if user.role == 'admin' %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for s in sessions %}
+    <tr class="{{ 'is-cancelled' if s.status == 'cancelled' }} {{ 'is-today' if s.date == today }} {{ 'is-past' if s.date < today }}">
+      <td class="when num name" style="font-weight:600">{{ s.date.month }}월 {{ s.date.day }}일 ({{ weekdays[s.date.weekday()] }}){% if s.date == today %} <span class="badge badge-blue">오늘</span>{% endif %}
+        <div class="m-only desc">{{ [s.room, teachers.get(s.teacher_id)]|select|join(' · ') }}</div></td>
+      <td class="when num">{{ s.start_time|hm }}~{{ s.end_time|hm }}</td>
+      <td class="d-only">{{ s.room or '-' }}</td>
+      <td class="d-only">{{ teachers.get(s.teacher_id, '-') }}{% if s.teacher_id != cls.teacher_id and s.teacher_id %} <span class="badge badge-orange">대강</span>{% endif %}</td>
+      <td><span class="badge badge-{{ st[s.status][1] }}">{{ st[s.status][0] }}</span>{% if s.note %}<div class="desc small muted">{{ s.note }}</div>{% endif %}</td>
+      {% if user.role == 'admin' %}
+      <td class="actions">
+        {% if s.date >= today %}
+        <button class="btn btn-secondary btn-sm" hx-get="/classes/sessions/{{ s.id }}/edit" hx-target="#modal">수정</button>
+        {% if s.status == 'cancelled' %}
+        <button class="btn btn-ghost btn-sm" hx-post="/classes/sessions/{{ s.id }}/restore" hx-swap="none">휴강 취소</button>
+        {% else %}
+        <button class="btn btn-danger btn-sm" hx-post="/classes/sessions/{{ s.id }}/cancel" hx-swap="none"
+                hx-confirm="{{ s.date.month }}월 {{ s.date.day }}일 {{ s.start_time|hm }} 수업을 휴강으로 바꿀까요?" data-confirm-ok="휴강">휴강</button>
+        {% endif %}
+        {% endif %}
+      </td>
+      {% endif %}
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="empty">회차가 없어요. 정규 시간표를 추가하면 자동으로 만들어져요.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div></div>
+</div>

@@ -1,0 +1,12 @@
+{% from "macros.html" import status_badge %}
+{% for s in students %}
+<div class="list-item">
+  <span class="avatar">{{ s.name[:1] }}</span>
+  <div class="main"><div class="title">{{ s.name }} {% if s.status != 'active' %}{{ status_badge(s.status) }}{% endif %}</div>
+    <div class="desc">{{ [s.school, s.grade]|select|join(' · ') or '-' }}</div></div>
+  <button class="btn btn-sm" hx-post="/classes/{{ cls.id }}/enrollments" hx-vals='{"student_id": "{{ s.id }}"}'
+          hx-target="#students" hx-swap="outerHTML">추가</button>
+</div>
+{% else %}
+<p class="muted small" style="margin:12px 0 0">추가할 수 있는 학생이 없어요</p>
+{% endfor %}
