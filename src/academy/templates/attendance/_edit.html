@@ -1,0 +1,23 @@
+{% from "macros.html" import modal_attrs, modal_header, modal_footer %}
+<dialog {{ modal_attrs(none) }}>
+  {{ modal_header(row.student.name) }}
+  <form hx-put="/attendance/sessions/{{ s.id }}/students/{{ row.student.id }}" hx-target="closest dialog" hx-swap="outerHTML">
+    <div class="modal-body">
+      <p class="modal-desc">{{ cls.name }} · {{ s.date.month }}월 {{ s.date.day }}일 {{ s.start_time|hm }}</p>
+      <div class="field">
+        <span class="field-label">출결</span>
+        <div class="chips">
+          {% for value, label in [('present', '출석'), ('late', '지각'), ('absent', '결석'), ('excused', '공결'), ('', '미체크')] %}
+          <label><input type="radio" name="status" value="{{ value }}" {% if (row.status or '') == value %}checked{% endif %}><span>{{ label }}</span></label>
+          {% endfor %}
+        </div>
+        <span class="field-help">공결은 학교 행사·병결처럼 결석으로 치지 않는 경우예요. 미체크로 바꾸면 메모도 지워져요.</span>
+      </div>
+      <label class="field">
+        <span class="field-label">메모</span>
+        <textarea name="memo" rows="3" placeholder="예: 병원 진료로 30분 늦음">{{ row.attendance.memo if row.attendance and row.attendance.memo else '' }}</textarea>
+      </label>
+    </div>
+    {{ modal_footer('저장하기') }}
+  </form>
+</dialog>

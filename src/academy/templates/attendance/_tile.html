@@ -1,0 +1,16 @@
+{% set st = row.status %}
+<div class="att-tile {{ st or 'none' }}">
+  <button type="button" class="main"
+          {% if checkable %}hx-post="/attendance/sessions/{{ s.id }}/students/{{ row.student.id }}"
+          hx-vals='{"status": "{{ next_status(st) }}"}' hx-target="closest .att-tile" hx-swap="outerHTML"
+          hx-on::before-request="navigator.vibrate && navigator.vibrate(8)"{% else %}disabled{% endif %}>
+    <span class="name">{{ row.student.name }}</span>
+    <span class="state">{{ labels[st] }}</span>
+    {% if row.attendance and row.attendance.memo %}<span class="memo-dot" title="{{ row.attendance.memo }}">메모</span>{% endif %}
+  </button>
+  {% if checkable %}
+  <button type="button" class="more" aria-label="{{ row.student.name }} 공결·메모"
+          hx-get="/attendance/sessions/{{ s.id }}/students/{{ row.student.id }}/edit" hx-target="#modal">⋯</button>
+  {% endif %}
+</div>
+{% if oob_counts %}{% include "attendance/_counts.html" %}{% endif %}

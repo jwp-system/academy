@@ -1,0 +1,14 @@
+<tr {% if p.cash_receipt_issued %}class="inactive"{% endif %}>
+  <td class="num">{{ p.paid_at.strftime('%m.%d') }}</td>
+  <td><span class="name">{{ s.name }}</span><div class="desc m-only">{{ methods[p.method] }} · {{ inv.year_month }}</div></td>
+  <td class="num">{{ '{:,}'.format(p.amount) }}원</td>
+  <td class="d-only">{{ methods[p.method] }}</td>
+  <td class="d-only num">{{ inv.year_month }}</td>
+  <td style="text-align:center">
+    <label class="check" style="margin:0;justify-content:center">
+      <input type="checkbox" name="issued" {% if p.cash_receipt_issued %}checked{% endif %} aria-label="{{ s.name }} 현금영수증 발급"
+             hx-patch="/billing/payments/{{ p.id }}/receipt" hx-target="closest tr" hx-swap="outerHTML">
+    </label>
+  </td>
+</tr>
+{% if oob_pending %}<span id="receipt-pending" hx-swap-oob="true">{{ pending }}</span>{% endif %}

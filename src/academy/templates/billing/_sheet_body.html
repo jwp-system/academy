@@ -1,0 +1,74 @@
+{% from "macros.html" import field, icon %}
+{% set badge = {'unpaid': 'red', 'partial': 'orange', 'paid': 'blue'} %}
+<div id="invoice-sheet" class="modal-body">
+  <dl class="kv">
+    <div><dt>수강 반</dt><dd>{{ r.classes|map(attribute='name')|join(', ') or '-' }}</dd></div>
+    <div><dt>입금자명</dt><dd>{{ r.student.payer_code }}</dd></div>
+    <div><dt>청구액</dt><dd class="num">{{ '{:,}'.format(r.due) }}원{% if inv.discount %} <span class="muted small">(수강료 {{ '{:,}'.format(inv.amount) }} − 할인 {{ '{:,}'.format(inv.discount) }})</span>{% endif %}</dd></div>
+    <div><dt>납부 기한</dt><dd class="num">{{ inv.due_date }}</dd></div>
+    <div><dt>상태</dt><dd><span class="badge badge-{{ badge[inv.status] }}">{{ labels[inv.status] }}</span>
+      {% if r.rest > 0 %}<span class="num">{{ '{:,}'.format(r.rest) }}원 남음</span>{% endif %}</dd></div>
+  </dl>
+
+  <h3 style="margin:24px 0 8px">납부 기록</h3>
+  {% for p in payments %}
+  <div class="list-item">
+    <div class="main">
+      <div class="title num">{{ '{:,}'.format(p.amount) }}원 <span class="muted" style="font-weight:500">· {{ methods[p.method] }}</span>
+        {% if p.bank_transaction_id %}<span class="badge badge-green">입금 매칭</span>{% endif %}</div>
+      <div class="desc num">{{ p.paid_at.strftime('%Y-%m-%d %H:%M') }}{{ ' · ' ~ p.memo if p.memo }}</div>
+    </div>
+    {% if not p.bank_transaction_id %}
+    <button class="btn btn-ghost btn-sm" hx-delete="/billing/payments/{{ p.id }}" hx-target="#invoice-sheet" hx-swap="outerHTML"
+            hx-confirm="{{ '{:,}'.format(p.amount) }}원 납부 기록을 지울까요?" data-confirm-ok="지우기" data-confirm-danger>지우기</button>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="muted">아직 납부 기록이 없어요</p>
+  {% endfor %}
+
+  <form class="subform" hx-post="/billing/invoices/{{ inv.id }}/payments" hx-target="#invoice-sheet" hx-swap="outerHTML">
+    <div class="grid-2">
+      {{ field('amount', '받은 금액', p_form, p_errors, required=True, placeholder='예: 280,000') }}
+      <label class="field">
+        <span class="field-label">받은 날</span>
+        <input type="date" name="paid_on" value="{{ p_form.get('paid_on') or '' }}" max="{{ today }}" {% if 'paid_on' in p_errors %}aria-invalid="true"{% endif %}>
+        {% if 'paid_on' in p_errors %}<span class="field-error">{{ p_errors['paid_on'] }}</span>{% endif %}
+      </label>
+    </div>
+    <div class="field">
+      <span class="field-label">결제 수단</span>
+      <div class="chips">
+        {% for v, t in methods.items() %}
+        <label><input type="radio" name="method" value="{{ v }}" {% if p_form.get('method')|string == v %}checked{% endif %}><span>{{ t }}</span></label>
+        {% endfor %}
+      </div>
+      {% if 'method' in p_errors %}<span class="field-error">{{ p_errors['method'] }}</span>{% endif %}
+    </div>
+    {{ field('memo', '메모', p_form, p_errors, placeholder='예: 형제 합산 입금') }}
+    <button type="submit" class="btn btn-block">납부 기록하기</button>
+  </form>
+
+  <details style="margin-top:20px" {% if i_errors %}open{% endif %}>
+    <summary class="muted small" style="cursor:pointer">청구 금액·기한 바꾸기</summary>
+    <form class="subform" hx-put="/billing/invoices/{{ inv.id }}" hx-target="#invoice-sheet" hx-swap="outerHTML">
+      <div class="grid-2">
+        {{ field('amount', '수강료', i_form, i_errors, required=True) }}
+        {{ field('discount', '할인', i_form, i_errors, help='형제 할인, 장학 등') }}
+      </div>
+      <label class="field">
+        <span class="field-label">납부 기한</span>
+        <input type="date" name="due_date" value="{{ i_form.get('due_date') or '' }}" required>
+        {% if 'due_date' in i_errors %}<span class="field-error">{{ i_errors['due_date'] }}</span>{% endif %}
+      </label>
+      <div class="toolbar" style="margin:0">
+        <button type="submit" class="btn btn-secondary">저장하기</button>
+        {% if not payments %}
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-ghost" hx-delete="/billing/invoices/{{ inv.id }}" hx-target="closest dialog" hx-swap="outerHTML"
+                hx-confirm="이 청구를 취소할까요?&#10;다시 '청구 만들기'를 누르면 새로 만들어져요." data-confirm-ok="청구 취소" data-confirm-danger>청구 취소</button>
+        {% endif %}
+      </div>
+    </form>
+  </details>
+</div>

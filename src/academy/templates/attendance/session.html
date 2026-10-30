@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon %}
+{% block title %}출결 · {{ cls.name }} · {{ academy_name }}{% endblock %}
+{% block content %}
+<a class="back" href="/attendance?day={{ s.date }}">{{ icon('chevron-left') }}{{ s.date.month }}월 {{ s.date.day }}일 수업 목록</a>
+<div class="page-header">
+  <div>
+    <h1 style="display:flex;align-items:center;gap:10px">
+      <span class="color-dot" style="width:14px;height:14px;margin:0;background:{{ class_color(cls.id) }}"></span>{{ cls.name }}
+      {% if s.status == 'makeup' %}<span class="badge badge-green">보강</span>{% endif %}
+    </h1>
+    <p class="sub num">{{ s.date.month }}월 {{ s.date.day }}일 ({{ weekdays[s.date.weekday()] }}) {{ s.start_time|hm }}~{{ s.end_time|hm }}{{ ' · ' ~ s.room if s.room }}{{ ' · ' ~ teacher if teacher }}</p>
+  </div>
+</div>
+
+{% if s.status == 'cancelled' %}
+<div class="alert alert-warning"><strong>휴강한 수업이에요</strong>출결을 체크할 수 없어요.{% if s.note %} ({{ s.note }}){% endif %}</div>
+{% elif s.date > today %}
+<div class="alert alert-warning"><strong>아직 수업 날이 아니에요</strong>수업 당일부터 체크할 수 있어요.</div>
+{% endif %}
+
+{% include "attendance/_board.html" %}
+{% endblock %}

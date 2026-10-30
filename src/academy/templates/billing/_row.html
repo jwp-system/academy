@@ -1,0 +1,24 @@
+{% set badge = {'unpaid': 'red', 'partial': 'orange', 'paid': 'blue'} %}
+{% set inv = r.invoice %}
+<tr>
+  <td>
+    <button class="name link-btn" hx-get="/billing/invoices/{{ inv.id }}" hx-target="#modal">{{ r.student.name }}</button>
+    <div class="desc">{{ r.classes|map(attribute='name')|join(', ') or '수강 반 없음' }}</div>
+  </td>
+  <td class="d-only num">{{ '{:,}'.format(r.due) }}원{% if inv.discount %}<div class="desc">할인 {{ '{:,}'.format(inv.discount) }}원</div>{% endif %}</td>
+  <td class="d-only num">{{ '{:,}'.format(r.paid) }}원{% if r.last_payment %}<div class="desc">{{ methods[r.last_payment.method] }} · {{ r.last_payment.paid_at.month }}/{{ r.last_payment.paid_at.day }}</div>{% endif %}</td>
+  <td class="num">{% if r.rest > 0 %}<strong>{{ '{:,}'.format(r.rest) }}원</strong>{% elif r.rest < 0 %}<span class="t-orange">{{ '{:,}'.format(-r.rest) }}원 더 냄</span>{% else %}<span class="muted">-</span>{% endif %}
+    <div class="m-only desc">{{ inv.due_date.month }}/{{ inv.due_date.day }}까지</div></td>
+  <td class="d-only num {{ 't-red' if r.overdue(today) }}">{{ inv.due_date.month }}월 {{ inv.due_date.day }}일{% if r.overdue(today) %}<div class="desc t-red">기한 지남</div>{% endif %}</td>
+  <td><span class="badge badge-{{ badge[inv.status] }}">{{ labels[inv.status] }}</span></td>
+  <td style="text-align:center">
+    <label class="check" style="margin:0;justify-content:center">
+      <input type="checkbox" name="paid" {% if inv.status == 'paid' %}checked{% endif %}
+             aria-label="{{ r.student.name }} 완납"
+             hx-patch="/billing/invoices/{{ inv.id }}/paid" hx-include="#quick-method" hx-target="closest tr" hx-swap="outerHTML"
+             {% if inv.status == 'paid' %}hx-confirm="{{ r.student.name }} 학생의 납부 기록을 지우고 미납으로 되돌릴까요?" data-confirm-ok="되돌리기" data-confirm-danger{% endif %}>
+    </label>
+  </td>
+  <td class="actions d-only"><button class="btn btn-secondary btn-sm" hx-get="/billing/invoices/{{ inv.id }}" hx-target="#modal">자세히</button></td>
+</tr>
+{% if oob_summary %}{% include "billing/_summary.html" %}{% endif %}

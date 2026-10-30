@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
 
+    # 수납: 매월 납부 기한(일). 짧은 달은 말일로 맞춘다.
+    billing_due_day: int = 10
+
     # 야간 발송 금지 시간대 (5.3절)
     quiet_hours_start: int = 21
     quiet_hours_end: int = 8

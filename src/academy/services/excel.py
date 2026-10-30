@@ -141,3 +141,101 @@ def import_students(db: Session, file: BinaryIO) -> ImportResult:
         result.created += 1
     db.commit()
     return result
+
+
+# --- 수납 내역 내보내기 (5주차) ------------------------------------------------------
+
+
+def _style_sheet(ws, widths: list[int], money_cols: list[int]) -> None:
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill("solid", fgColor="F2F4F6")
+        cell.alignment = Alignment(horizontal="center")
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = w
+    for row in ws.iter_rows(min_row=2):
+        for i in money_cols:
+            row[i - 1].number_format = "#,##0"
+    ws.freeze_panes = "A2"
+
+
+def billing_workbook(month_label: str, rows, payments, labels: dict, methods: dict) -> bytes:
+    """rows: services.billing.BillingRow 목록, payments: (Payment, Invoice, Student) 목록."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "청구"
+    ws.append(
+        [
+            "학생",
+            "학교",
+            "수강 반",
+            "입금자명",
+            "수강료",
+            "할인",
+            "청구액",
+            "납부액",
+            "남은 금액",
+            "납부 기한",
+            "상태",
+            "최근 납부일",
+            "결제 수단",
+        ]
+    )
+    for r in rows:
+        ws.append(
+            [
+                r.student.name,
+                r.student.school or "",
+                ", ".join(c.name for c in r.classes),
+                r.student.payer_code,
+                r.invoice.amount,
+                r.invoice.discount,
+                r.due,
+                r.paid,
+                r.rest,
+                r.invoice.due_date,
+                labels[r.invoice.status],
+                r.last_payment.paid_at.date() if r.last_payment else None,
+                methods[r.last_payment.method] if r.last_payment else "",
+            ]
+        )
+    n = len(rows) + 1
+    ws.append([])
+    ws.append(
+        [
+            "합계",
+            "",
+            "",
+            "",
+            f"=SUM(E2:E{n})",
+            f"=SUM(F2:F{n})",
+            f"=SUM(G2:G{n})",
+            f"=SUM(H2:H{n})",
+            f"=SUM(I2:I{n})",
+        ]
+    )
+    _style_sheet(ws, [10, 12, 26, 12, 11, 9, 11, 11, 11, 12, 10, 12, 10], [5, 6, 7, 8, 9])
+    for cell in ws[ws.max_row]:
+        cell.number_format = "#,##0"
+    for c in ws.iter_rows(min_row=2, min_col=10, max_col=10):
+        c[0].number_format = "yyyy-mm-dd"
+    for c in ws.iter_rows(min_row=2, min_col=12, max_col=12):
+        c[0].number_format = "yyyy-mm-dd"
+
+    ws2 = wb.create_sheet("납부 내역")
+    ws2.append(["납부일시", "학생", "청구월", "금액", "결제 수단", "현금영수증", "메모"])
+    for p, inv, s in payments:
+        receipt = ("발급" if p.cash_receipt_issued else "미발급") if p.method != "card" else "-"
+        ws2.append(
+            [p.paid_at, s.name, inv.year_month, p.amount, methods[p.method], receipt, p.memo or ""]
+        )
+    _style_sheet(ws2, [17, 10, 10, 11, 10, 11, 30], [4])
+    for c in ws2.iter_rows(min_row=2, max_col=1):
+        c[0].number_format = "yyyy-mm-dd hh:mm"
+    ws.title = f"{month_label} 청구"
+
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()

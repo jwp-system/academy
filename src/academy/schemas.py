@@ -14,7 +14,7 @@ from pydantic import (
     model_validator,
 )
 
-from academy.models import Role, StudentStatus
+from academy.models import PaymentMethod, Role, StudentStatus
 
 _MESSAGES = {
     "missing": "꼭 입력해 주세요.",
@@ -183,3 +183,35 @@ class SessionIn(TimeRange):
 class EnrollIn(FormModel):
     student_id: int
     start_date: dt.date = Field(default_factory=dt.date.today)
+
+
+class InvoiceIn(FormModel):
+    amount: int = Field(ge=0)
+    discount: int = Field(default=0, ge=0)
+    due_date: dt.date
+
+    _won = field_validator("amount", "discount", mode="before")(_parse_won)
+
+    @field_validator("discount")
+    @classmethod
+    def _discount(cls, v: int, info: ValidationInfo) -> int:
+        amount = info.data.get("amount")
+        if amount is not None and v > amount:
+            raise ValueError("할인이 수강료보다 클 수 없어요.")
+        return v
+
+
+class PaymentIn(FormModel):
+    amount: int = Field(ge=1)
+    method: PaymentMethod
+    paid_on: dt.date = Field(default_factory=dt.date.today)
+    memo: str | None = None
+
+    _won = field_validator("amount", mode="before")(_parse_won)
+
+    @field_validator("paid_on")
+    @classmethod
+    def _not_future(cls, v: dt.date) -> dt.date:
+        if v > dt.date.today():
+            raise ValueError("오늘 이후 날짜는 고를 수 없어요.")
+        return v

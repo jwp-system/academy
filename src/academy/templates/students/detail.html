@@ -59,15 +59,7 @@
   </section>
 
   <section x-show="tab === 'attendance'" x-cloak>
-    <div class="card flush"><div class="table-wrap"><table class="table">
-      <thead><tr><th>날짜</th><th>반</th><th>출결</th><th>메모</th></tr></thead>
-      <tbody>
-      {% for a, s, c in attendances %}
-        <tr><td class="num">{{ s.date }}</td><td>{{ c.name }}</td><td>{{ b(att, a.status) }}</td><td>{{ a.memo or '' }}</td></tr>
-      {% else %}<tr><td colspan="4" class="empty">출결 기록이 없어요</td></tr>{% endfor %}
-      </tbody>
-    </table></div></div>
-    {% if attendances %}<p class="muted small" style="margin-top:8px">최근 50건까지 보여요</p>{% endif %}
+    {% include "students/_attendance.html" %}
   </section>
 
   {% if user.role == 'admin' %}
@@ -76,7 +68,7 @@
       <thead><tr><th>청구월</th><th>금액</th><th>할인</th><th>납부일</th><th>상태</th></tr></thead>
       <tbody>
       {% for i in invoices %}
-        <tr><td class="name">{{ i.year_month }}</td><td class="num">{{ '{:,}'.format(i.amount) }}원</td>
+        <tr><td><button class="name link-btn" hx-get="/billing/invoices/{{ i.id }}" hx-target="#modal">{{ i.year_month }}</button></td><td class="num">{{ '{:,}'.format(i.amount) }}원</td>
             <td class="num">{{ '{:,}'.format(i.discount) }}원</td><td class="num">{{ i.due_date }}</td><td>{{ b(inv, i.status) }}</td></tr>
       {% else %}<tr><td colspan="5" class="empty">청구 내역이 없어요</td></tr>{% endfor %}
       </tbody>

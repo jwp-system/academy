@@ -1,0 +1,5 @@
+{% from "macros.html" import modal_attrs, modal_header %}
+<dialog {{ modal_attrs(none) }}>
+  {{ modal_header(r.student.name ~ ' · ' ~ inv.year_month[5:]|int ~ '월 청구') }}
+  {% include "billing/_sheet_body.html" %}
+</dialog>

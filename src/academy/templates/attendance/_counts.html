@@ -1,0 +1,7 @@
+<div id="att-counts" class="att-counts" {% if oob_counts %}hx-swap-oob="true"{% endif %}>
+  <div class="item"><span class="label">출석</span><strong class="t-blue">{{ counts.present }}</strong></div>
+  <div class="item"><span class="label">지각</span><strong class="t-orange">{{ counts.late }}</strong></div>
+  <div class="item"><span class="label">결석</span><strong class="t-red">{{ counts.absent }}</strong></div>
+  <div class="item"><span class="label">공결</span><strong>{{ counts.excused }}</strong></div>
+  <div class="item"><span class="label">미체크</span><strong class="muted">{{ counts.unchecked }}</strong></div>
+</div>

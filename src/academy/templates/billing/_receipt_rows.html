@@ -1,0 +1,4 @@
+{% for p, inv, s in rows %}{% include "billing/_receipt_row.html" %}
+{% else %}
+<tr><td colspan="6" class="empty">{{ '발급할 현금영수증이 없어요' if show != 'all' else '계좌이체·현금 납부 기록이 없어요' }}</td></tr>
+{% endfor %}

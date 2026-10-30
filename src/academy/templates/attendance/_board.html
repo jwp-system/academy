@@ -1,0 +1,19 @@
+{# 회차 출결 보드: 집계 + 학생 버튼 그리드. 체크 후에는 이 조각만 다시 그린다. #}
+<div id="att-board" hx-get="/attendance/sessions/{{ s.id }}" hx-trigger="attendanceSaved from:body" hx-swap="outerHTML">
+  {% include "attendance/_counts.html" %}
+  {% if rows %}
+  {% if checkable %}
+  <div class="toolbar" style="justify-content:space-between">
+    <span class="muted small">이름을 누르면 출석 → 지각 → 결석 순으로 바뀌어요. ⋯ 에서 공결·메모</span>
+    {% if counts.unchecked %}
+    <button class="btn btn-weak" hx-post="/attendance/sessions/{{ s.id }}/all-present" hx-target="#att-board" hx-swap="outerHTML">남은 {{ counts.unchecked }}명 모두 출석</button>
+    {% endif %}
+  </div>
+  {% endif %}
+  <div class="att-grid">
+    {% for row in rows %}{% include "attendance/_tile.html" %}{% endfor %}
+  </div>
+  {% else %}
+  <div class="card empty">이 수업에 수강생이 없어요{% if user.role == 'admin' %}. <a href="/classes/{{ cls.id }}">반 화면</a>에서 추가해 주세요{% endif %}</div>
+  {% endif %}
+</div>

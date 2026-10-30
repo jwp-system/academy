@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
@@ -8,9 +9,7 @@ from sqlmodel import Session, col, select
 from academy.auth import AdminUser, CurrentUser
 from academy.db import DBSession
 from academy.models import (
-    Attendance,
     ClassGroup,
-    ClassSession,
     Consultation,
     Enrollment,
     Guardian,
@@ -22,9 +21,11 @@ from academy.models import (
     User,
 )
 from academy.schemas import ConsultationIn, GuardianIn, StudentIn, form_errors
-from academy.services import excel
+from academy.services import attendance, excel
+from academy.services.sessions import WEEKDAYS
 from academy.services.students import (
     create_student,
+    end_enrollments,
     new_view_token,
     payer_code_taken,
     set_status,
@@ -131,6 +132,8 @@ def update(request: Request, user: AdminUser, db: DBSession, student_id: int, fo
             "students/_form.html",
             ctx | {"errors": {"payer_code": "다른 학생이 쓰고 있는 입금자명이에요."}},
         )
+    if data.status == StudentStatus.withdrawn and student.status != StudentStatus.withdrawn:
+        end_enrollments(db, student)
     set_status(student, data.status)
     student.sqlmodel_update(data.model_dump(exclude={"status"}))
     db.add(student)
@@ -142,6 +145,7 @@ def update(request: Request, user: AdminUser, db: DBSession, student_id: int, fo
 def withdraw(request: Request, user: AdminUser, db: DBSession, student_id: int):
     """퇴원 처리. 기록 보존을 위해 행은 지우지 않는다 (보관 기간 후 파기는 별도 기능)."""
     student = _get_student(db, user, student_id)
+    end_enrollments(db, student)
     set_status(student, StudentStatus.withdrawn)
     db.add(student)
     db.commit()
@@ -204,19 +208,11 @@ def detail(request: Request, user: CurrentUser, db: DBSession, student_id: int):
         .where(Enrollment.student_id == student.id)
         .order_by(col(Enrollment.start_date).desc())
     ).all()
-    attendances = db.exec(
-        select(Attendance, ClassSession, ClassGroup)
-        .join(ClassSession, ClassSession.id == Attendance.session_id)
-        .join(ClassGroup, ClassGroup.id == ClassSession.class_id)
-        .where(Attendance.student_id == student.id)
-        .order_by(col(ClassSession.date).desc())
-        .limit(50)
-    ).all()
     ctx = {
         "user": user,
         "student": student,
         "enrollments": enrollments,
-        "attendances": attendances,
+        **_attendance_ctx(db, student, date.today()),
         **_guardians_ctx(db, student),
         **_consultations_ctx(db, student),
     }
@@ -233,6 +229,28 @@ def detail(request: Request, user: CurrentUser, db: DBSession, student_id: int):
             .limit(50)
         ).all()
     return render(request, "students/detail.html", ctx)
+
+
+def _attendance_ctx(db: Session, student: Student, month: date) -> dict:
+    return {
+        "student": student,
+        "history": attendance.student_history(db, student, month),
+        "att_labels": attendance.LABELS,
+        "weekdays": WEEKDAYS,
+        "this_month": date.today().replace(day=1),
+    }
+
+
+@router.get("/{student_id}/attendance")
+def attendance_history(
+    request: Request, user: CurrentUser, db: DBSession, student_id: int, month: str = ""
+):
+    student = _get_student(db, user, student_id)
+    try:
+        m = date.fromisoformat(f"{month}-01") if month else date.today()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="월을 확인해 주세요.") from None
+    return render(request, "students/_attendance.html", _attendance_ctx(db, student, m))
 
 
 @router.get("/{student_id}/info")

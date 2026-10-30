@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>출결</h1>
+    <p class="sub">{{ '수업을 골라 출결을 체크해 주세요' if pairs else '' }}</p>
+  </div>
+</div>
+
+<div class="day-nav">
+  <a class="btn btn-secondary btn-icon" href="/attendance?day={{ prev_day }}" aria-label="전날">{{ icon('chevron-left') }}</a>
+  <label class="day-label">
+    <strong>{{ day.month }}월 {{ day.day }}일 ({{ weekdays[day.weekday()] }})</strong>
+    {% if day == today %}<span class="badge badge-blue">오늘</span>{% endif %}
+    <input type="date" value="{{ day }}" aria-label="날짜 고르기" onchange="location.href='/attendance?day=' + this.value">
+  </label>
+  <a class="btn btn-secondary btn-icon" href="/attendance?day={{ next_day }}" aria-label="다음날">{{ icon('chevron-right') }}</a>
+  {% if day != today %}<a class="btn btn-ghost btn-sm" href="/attendance">오늘로</a>{% endif %}
+</div>
+
+<div class="session-list">
+  {% for s, cls in pairs %}
+  {% set c = counts[s.id] %}
+  <a class="session-card {{ 'is-cancelled' if s.status == 'cancelled' }}" href="/attendance/sessions/{{ s.id }}">
+    <div class="time num">
+      <strong>{{ s.start_time|hm }}</strong>
+      <span>{{ s.end_time|hm }}</span>
+    </div>
+    <div class="main">
+      <div class="title">
+        <span class="color-dot" style="background:{{ class_color(cls.id) }}"></span>{{ cls.name }}
+        {% if s.id in ongoing %}<span class="badge badge-blue">수업 중</span>{% endif %}
+        {% if s.status == 'cancelled' %}<span class="badge badge-grey">휴강</span>
+        {% elif s.status == 'makeup' %}<span class="badge badge-green">보강</span>{% endif %}
+      </div>
+      <div class="desc">{{ [s.room, teachers.get(s.teacher_id)]|select|join(' · ') }}</div>
+      {% if s.status != 'cancelled' and c.total %}
+      <div class="progress" aria-label="{{ c.total }}명 중 {{ c.checked }}명 체크">
+        <span style="width:{{ (c.checked * 100 / c.total)|round }}%"></span>
+      </div>
+      <div class="mini-counts">
+        <span>{{ c.checked }}/{{ c.total }}명 체크</span>
+        {% if c.absent %}<span class="t-red">결석 {{ c.absent }}</span>{% endif %}
+        {% if c.late %}<span class="t-orange">지각 {{ c.late }}</span>{% endif %}
+      </div>
+      {% elif s.status != 'cancelled' %}
+      <div class="mini-counts"><span>수강생 없음</span></div>
+      {% endif %}
+    </div>
+    <span class="muted">{{ icon('chevron-right') }}</span>
+  </a>
+  {% else %}
+  <div class="card empty">
+    <p style="font-size:17px;font-weight:600;color:var(--text-2);margin-bottom:4px">이 날은 수업이 없어요</p>
+    <p class="muted" style="margin:0">{{ '반·시간표에서 정규 시간표를 정하면 회차가 만들어져요' if user.role == 'admin' else '다른 날짜를 골라 보세요' }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

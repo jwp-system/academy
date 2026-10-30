@@ -3,9 +3,9 @@
 import secrets
 from datetime import date
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, or_, select
 
-from academy.models import Guardian, Student, StudentStatus
+from academy.models import Enrollment, Guardian, Student, StudentStatus
 from academy.schemas import GuardianIn, StudentIn
 
 
@@ -53,3 +53,18 @@ def set_status(student: Student, status: StudentStatus) -> None:
     elif status != StudentStatus.withdrawn:
         student.withdrawn_at = None
     student.status = status
+
+
+def end_enrollments(db: Session, student: Student, day: date | None = None) -> int:
+    """퇴원 시 진행 중인 수강을 그날까지로 끝낸다. 출석부에서 다음 날부터 빠진다."""
+    day = day or date.today()
+    rows = db.exec(
+        select(Enrollment).where(
+            Enrollment.student_id == student.id,
+            or_(col(Enrollment.end_date).is_(None), col(Enrollment.end_date) > day),
+        )
+    ).all()
+    for e in rows:
+        e.end_date = max(day, e.start_date)
+        db.add(e)
+    return len(rows)

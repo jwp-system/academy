@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>수납</h1>
+    <p class="sub">계좌이체·현금 납부는 현금영수증을 발급해 주세요. 홈택스에서 발급한 뒤 체크하면 목록에서 빠져요.</p>
+  </div>
+</div>
+{% set active = 'receipts' %}{% include "billing/_subnav.html" %}
+<form class="chips toolbar" hx-get="/billing/receipts" hx-target="#receipt-rows" hx-trigger="change">
+  <label><input type="radio" name="show" value="" {% if show != 'all' %}checked{% endif %}><span>발급 필요 <span id="receipt-pending">{{ pending }}</span></span></label>
+  <label><input type="radio" name="show" value="all" {% if show == 'all' %}checked{% endif %}><span>전체</span></label>
+</form>
+<div class="card flush">
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>납부일</th><th>학생</th><th>금액</th><th class="d-only">결제 수단</th><th class="d-only">청구월</th><th style="text-align:center">발급</th></tr></thead>
+      <tbody id="receipt-rows">{% include "billing/_receipt_rows.html" %}</tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

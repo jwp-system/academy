@@ -1,0 +1,6 @@
+<div id="billing-summary" class="stats" style="margin-bottom:16px" {% if oob_summary %}hx-swap-oob="true"{% endif %}>
+  <div class="stat"><div class="label">청구 {{ summary.count }}건</div><div class="value num">{{ '{:,}'.format(summary.billed) }}<small>원</small></div></div>
+  <div class="stat"><div class="label">납부</div><div class="value num t-blue">{{ '{:,}'.format(summary.paid) }}<small>원</small></div></div>
+  <div class="stat {{ 'is-alert' if summary.rest }}"><div class="label">미납 {{ summary.unpaid_count }}건</div><div class="value num">{{ '{:,}'.format(summary.rest) }}<small>원</small></div></div>
+  <div class="stat {{ 'is-alert' if summary.overdue_count }}"><div class="label">기한 지남</div><div class="value num">{{ summary.overdue_count }}<small>건</small></div></div>
+</div>

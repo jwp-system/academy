@@ -1,0 +1,39 @@
+{% from "macros.html" import icon %}
+{% set c = history.counts %}
+{% set m = history.month %}
+<div id="attendance-history">
+  <div class="month-nav">
+    <button class="btn btn-secondary btn-icon" aria-label="지난달" hx-get="/students/{{ student.id }}/attendance?month={{ history.prev_month.strftime('%Y-%m') }}"
+            hx-target="#attendance-history" hx-swap="outerHTML">{{ icon('chevron-left') }}</button>
+    <strong>{{ m.year }}년 {{ m.month }}월</strong>
+    <button class="btn btn-secondary btn-icon" aria-label="다음달" {% if m >= this_month %}disabled{% endif %}
+            hx-get="/students/{{ student.id }}/attendance?month={{ history.next_month.strftime('%Y-%m') }}"
+            hx-target="#attendance-history" hx-swap="outerHTML">{{ icon('chevron-right') }}</button>
+  </div>
+  <div class="att-summary">
+    <div class="item"><span class="label">출석률</span><strong class="t-blue">{{ c.rate ~ '%' if c.rate is not none else '-' }}</strong></div>
+    <div class="item"><span class="label">출석</span><strong>{{ c.present }}</strong></div>
+    <div class="item"><span class="label">지각</span><strong class="t-orange">{{ c.late }}</strong></div>
+    <div class="item"><span class="label">결석</span><strong class="t-red">{{ c.absent }}</strong></div>
+    <div class="item"><span class="label">공결</span><strong>{{ c.excused }}</strong></div>
+    {% if c.unchecked %}<div class="item"><span class="label">미체크</span><strong class="muted">{{ c.unchecked }}</strong></div>{% endif %}
+  </div>
+  {% set badge = {'present': 'blue', 'late': 'orange', 'absent': 'red', 'excused': 'grey'} %}
+  <div class="card flush"><div class="table-wrap"><table class="table">
+    <thead><tr><th>날짜</th><th>반</th><th>출결</th><th class="d-only">메모</th></tr></thead>
+    <tbody>
+    {% for r in history.rows %}
+      <tr>
+        <td class="num name" style="font-weight:600">{{ r.session.date.month }}월 {{ r.session.date.day }}일 ({{ weekdays[r.session.date.weekday()] }})
+          <div class="desc small muted" style="font-weight:400">{{ r.session.start_time|hm }}</div></td>
+        <td>{{ r.cls.name }}{% if r.session.status == 'makeup' %} <span class="badge badge-green">보강</span>{% endif %}</td>
+        <td>{% if r.status %}<span class="badge badge-{{ badge[r.status] }}">{{ att_labels[r.status] }}</span>
+            {% else %}<span class="badge">미체크</span>{% endif %}
+            {% if r.attendance and r.attendance.memo %}<div class="m-only desc">{{ r.attendance.memo }}</div>{% endif %}</td>
+        <td class="d-only">{{ r.attendance.memo if r.attendance and r.attendance.memo else '' }}</td>
+      </tr>
+    {% else %}<tr><td colspan="4" class="empty">이 달에 들은 수업이 없어요</td></tr>{% endfor %}
+    </tbody>
+  </table></div></div>
+  <p class="muted small" style="margin-top:8px">출석률 = (출석 + 지각) ÷ (체크한 수업 − 공결). 휴강과 오늘 이후 수업은 빠져요.</p>
+</div>

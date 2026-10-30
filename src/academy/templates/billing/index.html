@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>수납</h1>
+    <p class="sub">청구를 만들고 납부를 체크해 주세요</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-secondary" href="/billing/export.xlsx?month={{ ym }}">{{ icon('download') }}엑셀 내보내기</a>
+  </div>
+</div>
+{% set active = 'invoices' %}{% include "billing/_subnav.html" %}
+
+<div class="month-nav">
+  <a class="btn btn-secondary btn-icon" href="/billing?month={{ prev_month }}" aria-label="지난달">{{ icon('chevron-left') }}</a>
+  <strong>{{ month.year }}년 {{ month.month }}월</strong>
+  <a class="btn btn-secondary btn-icon" href="/billing?month={{ next_month }}" aria-label="다음달">{{ icon('chevron-right') }}</a>
+</div>
+
+<form id="billing-filters" hx-get="/billing" hx-target="#billing-board" hx-swap="outerHTML" hx-trigger="input delay:300ms from:input[name=q], change from:input[name=status]" onsubmit="return false">
+  <input type="hidden" name="month" value="{{ ym }}">
+  <div class="toolbar">
+    <label class="search">
+      {{ icon('search') }}
+      <input class="input" type="search" name="q" value="{{ q }}" placeholder="학생 이름, 입금자명" aria-label="검색">
+    </label>
+    <label class="field quick-method" style="margin:0" title="완납 체크할 때 기록할 결제 수단">
+      <select name="method" id="quick-method" aria-label="완납 체크 결제 수단">
+        {% for v, t in methods.items() %}<option value="{{ v }}" {% if method == v %}selected{% endif %}>체크 시 {{ t }}</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="chips toolbar">
+    {% for value, text in filters %}
+    <label><input type="radio" name="status" value="{{ value }}" {% if status == value %}checked{% endif %}><span>{{ text }}</span></label>
+    {% endfor %}
+  </div>
+</form>
+
+{% include "billing/_board.html" %}
+{% endblock %}
