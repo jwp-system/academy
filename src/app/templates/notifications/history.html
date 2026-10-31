@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div><h1>알림</h1><p class="sub">문자·이메일은 모두 대기열을 거쳐 30초마다 발송돼요</p></div>
+  <div class="actions"><button class="btn btn-secondary" hx-post="/notifications/process" hx-swap="none">대기 중인 알림 지금 처리</button></div>
+</div>
+{% set active = 'history' %}{% include "notifications/_subnav.html" %}
+{% include "notifications/_channels.html" %}
+<form id="noti-filters" class="toolbar" hx-get="/notifications" hx-target="#noti-history" hx-swap="outerHTML" hx-trigger="change">
+  <div class="chips">
+    {% for value, text in [('', '전체'), ('pending', '대기'), ('sent', '발송'), ('failed', '실패'), ('cancelled', '취소')] %}
+    <label><input type="radio" name="status" value="{{ value }}" {% if status == value %}checked{% endif %}><span>{{ text }}{% if value and counts.get(value) %} {{ counts[value] }}{% endif %}</span></label>
+    {% endfor %}
+  </div>
+  <label class="field" style="margin:0;min-width:150px">
+    <select name="template" aria-label="유형"><option value="">유형 전체</option>
+      {% for k, l in templates %}<option value="{{ k }}" {% if template == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  </label>
+</form>
+{% include "notifications/_history.html" %}
+{% endblock %}

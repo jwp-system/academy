@@ -2,10 +2,10 @@ from logging.config import fileConfig
 
 from sqlmodel import SQLModel
 
-import academy.models  # noqa: F401  모델을 metadata에 등록
-from academy.config import get_settings
-from academy.db import engine
+import app.models  # noqa: F401  모델을 metadata에 등록
 from alembic import context
+from app.config import get_settings
+from app.db import engine
 
 config = context.config
 if config.config_file_name is not None:

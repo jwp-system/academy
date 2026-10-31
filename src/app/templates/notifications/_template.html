@@ -1,0 +1,38 @@
+{% set spec = it.spec %}
+<div id="tpl-{{ spec.key }}" class="card"
+     x-data='{ body: {{ it.body|tojson }}, sample: {{ it.sample|tojson }},
+       get preview() { return this.body.replace(/\{([^{}]+)\}/g, (m, k) => this.sample[k] ?? m) },
+       get bytes() { let n = 0; for (const c of this.preview) n += c.charCodeAt(0) > 127 ? 2 : 1; return n },
+       insert(f) { const t = this.$refs.ta, s = t.selectionStart ?? this.body.length;
+         this.body = this.body.slice(0, s) + "{" + f + "}" + this.body.slice(t.selectionEnd ?? s);
+         this.$nextTick(() => { t.focus(); t.selectionStart = t.selectionEnd = s + f.length + 2 }) } }'>
+  <div class="card-header">
+    <h3>{{ spec.label }}</h3>
+    {% if it.custom %}<span class="badge badge-blue">수정함</span>{% endif %}
+  </div>
+  <p class="muted small" style="margin-top:-8px">{{ spec.when }}</p>
+  <form hx-put="/notifications/templates/{{ spec.key }}" hx-target="#tpl-{{ spec.key }}" hx-swap="outerHTML">
+    <div class="tpl-grid">
+      <div>
+        <textarea class="input" name="body" rows="4" x-model="body" x-ref="ta" {% if it.error %}aria-invalid="true"{% endif %}></textarea>
+        {% if it.error %}<span class="field-error">{{ it.error }}</span>{% endif %}
+        <div class="tpl-fields">
+          {% for f in spec.fields %}<button type="button" class="chip-btn" @click="insert('{{ f }}')">{{ '{' ~ f ~ '}' }}</button>{% endfor %}
+        </div>
+      </div>
+      <div class="phone-preview">
+        <div class="bubble" x-text="preview"></div>
+        <div class="muted small" style="margin-top:6px">
+          <span x-text="bytes"></span>바이트 · <span x-text="bytes > 90 ? '장문(LMS)으로 나뉘어 가요' : '단문(SMS)'"></span>
+        </div>
+      </div>
+    </div>
+    <div class="toolbar" style="margin:16px 0 0">
+      <button type="submit" class="btn">저장하기</button>
+      {% if it.custom %}
+      <button type="button" class="btn btn-ghost" hx-post="/notifications/templates/{{ spec.key }}/reset" hx-target="#tpl-{{ spec.key }}" hx-swap="outerHTML"
+              hx-confirm="기본 문구로 되돌릴까요?" data-confirm-ok="되돌리기">기본 문구로 되돌리기</button>
+      {% endif %}
+    </div>
+  </form>
+</div>

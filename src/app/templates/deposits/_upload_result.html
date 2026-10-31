@@ -1,0 +1,7 @@
+{% if error %}
+<div class="alert alert-error" style="margin:12px 0 0">{{ error }}</div>
+{% else %}
+<div class="alert alert-success" style="margin:12px 0 0">
+  입금 {{ total }}건을 읽었어요 · 자동 처리 {{ summary.auto }} · 확인 필요 {{ summary.review }} · 미확인 {{ summary.unmatched }}{% if summary.duplicate %} · 이미 받은 입금 {{ summary.duplicate }}{% endif %}
+</div>
+{% endif %}

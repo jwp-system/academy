@@ -5,9 +5,9 @@ import pytest
 from openpyxl import Workbook
 from sqlmodel import select
 
-from academy.models import ClassGroup, Consultation, Enrollment, Guardian, Role, Student, User
-from academy.schemas import StudentIn
-from academy.services.students import create_student
+from app.models import ClassGroup, Consultation, Enrollment, Guardian, Role, Student, User
+from app.schemas import StudentIn
+from app.services.students import create_student
 
 
 @pytest.fixture

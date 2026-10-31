@@ -6,7 +6,7 @@ import pytest
 from openpyxl import load_workbook
 from sqlmodel import select
 
-from academy.models import (
+from app.models import (
     BankTransaction,
     ClassGroup,
     Enrollment,
@@ -16,9 +16,9 @@ from academy.models import (
     PaymentMethod,
     StudentStatus,
 )
-from academy.schemas import StudentIn
-from academy.services import billing as svc
-from academy.services.students import create_student
+from app.schemas import StudentIn
+from app.services import billing as svc
+from app.services.students import create_student
 
 NOV = date(2026, 11, 1)
 

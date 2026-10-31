@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div><h1>백업</h1><p class="sub">매일 새벽 2시 30분에 DB 사본을 자동으로 남겨요 ({{ keep }}일 보관)</p></div>
+  <div class="actions"><button class="btn" hx-post="/backups/run" hx-swap="none">지금 백업</button></div>
+</div>
+<div class="card">
+  <dl class="kv">
+    <div><dt>백업 폴더</dt><dd><code>{{ folder }}</code></dd></div>
+  </dl>
+  <p class="muted small" style="margin:12px 0 0">PC 고장에 대비해 이 폴더를 OneDrive·구글 드라이브 같은 클라우드 동기화 폴더로 지정해 두세요
+    (<code>.env</code>의 <code>ACADEMY_BACKUP_DIR</code>).</p>
+</div>
+{% include "_backup_list.html" %}
+{% endblock %}

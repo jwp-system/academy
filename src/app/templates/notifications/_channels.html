@@ -1,0 +1,14 @@
+<div id="channels" class="channel-cards">
+  {% for c in channel_status %}
+  <div class="channel-card {{ 'is-test' if c.mode == 'test' else ('is-bad' if c.ok == false else 'is-live') }}">
+    <div class="head">
+      <strong>{{ c.label }}</strong>
+      {% if c.mode == 'test' %}<span class="badge badge-orange">테스트 모드</span>
+      {% elif c.ok == false %}<span class="badge badge-red">연결 안 됨</span>
+      {% elif c.ok %}<span class="badge badge-green">연결됨</span>
+      {% else %}<span class="badge badge-blue">실제 발송</span>{% endif %}
+    </div>
+    <p>{{ c.message }}</p>
+  </div>
+  {% endfor %}
+</div>

@@ -1,0 +1,11 @@
+{% if parsed %}
+<dl class="kv small">
+  <div><dt>입금자명</dt><dd>{{ parsed.payer_name }}</dd></div>
+  <div><dt>금액</dt><dd class="num">{{ '{:,}'.format(parsed.amount) }}원</dd></div>
+  <div><dt>시각</dt><dd class="num">{{ parsed.received_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+</dl>
+{% elif text %}
+<p class="muted small" style="margin:0">입금 문자로 읽지 못했어요. 출금·입금취소 문자이거나 금액·입금자명이 없어요.</p>
+{% else %}
+<p class="muted small" style="margin:0">문자를 넣으면 읽어 낸 입금자명·금액·시각이 여기 보여요.</p>
+{% endif %}

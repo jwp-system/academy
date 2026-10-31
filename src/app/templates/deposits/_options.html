@@ -1,0 +1,12 @@
+{% for o in options %}
+<label class="list-item check" style="margin:0;padding:12px 0">
+  <input type="checkbox" name="invoice_id" value="{{ o.inv.id }}" @change="$event.target.checked ? picked[{{ o.inv.id }}] = {{ o.rest }} : delete picked[{{ o.inv.id }}]">
+  <span class="main">
+    <span class="title">{{ o.student.name }} <span class="muted" style="font-weight:500">· {{ o.inv.year_month[5:]|int }}월</span></span>
+    <span class="desc num" style="display:block">남은 금액 {{ '{:,}'.format(o.rest) }}원{{ ' · 입금액과 같아요' if o.rest == tx.amount }}</span>
+  </span>
+</label>
+{% else %}
+{% if searched is defined and searched %}<p class="muted small">완납 전인 청구가 있는 학생을 찾지 못했어요</p>
+{% elif searched is not defined %}<p class="muted small">추천할 학생이 없어요. 아래에서 학생을 찾아 주세요.</p>{% endif %}
+{% endfor %}

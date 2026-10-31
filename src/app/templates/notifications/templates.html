@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div><h1>알림</h1><p class="sub">보낼 문구를 바꿀 수 있어요. 바꾼 문구는 다음 발송부터 적용돼요.</p></div>
+</div>
+{% set active = 'templates' %}{% include "notifications/_subnav.html" %}
+<div class="stack">
+  {% for it in items %}{% include "notifications/_template.html" %}{% endfor %}
+</div>
+{% endblock %}

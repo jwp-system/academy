@@ -1,0 +1,22 @@
+<form id="test-form" hx-post="/notifications/test/send" hx-target="#test-form" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]">
+  <div class="field">
+    <div class="chips">
+      <label><input type="radio" name="channel" value="sms" {% if form.get('channel') != 'email' %}checked{% endif %}><span>문자</span></label>
+      <label><input type="radio" name="channel" value="email" {% if form.get('channel') == 'email' %}checked{% endif %}><span>이메일</span></label>
+    </div>
+  </div>
+  <label class="field">
+    <span class="field-label">받는 곳</span>
+    <input name="to" value="{{ form.get('to') or '' }}" placeholder="010-0000-0000 또는 이메일" {% if 'to' in errors %}aria-invalid="true"{% endif %}>
+    {% if 'to' in errors %}<span class="field-error">{{ errors['to'] }}</span>{% endif %}
+  </label>
+  <label class="field">
+    <span class="field-label">내용</span>
+    <textarea name="body" rows="3" placeholder="[학원] 문자 발송 테스트예요" {% if 'body' in errors %}aria-invalid="true"{% endif %}>{{ form.get('body') or '' }}</textarea>
+    {% if 'body' in errors %}<span class="field-error">{{ errors['body'] }}</span>{% endif %}
+  </label>
+  <button type="submit" class="btn btn-block">보내기</button>
+  {% for c in channel_status if c.mode == 'live' and c.channel == 'sms' %}
+  <p class="field-help" style="margin-top:8px">문자는 실제로 발송돼요.</p>
+  {% endfor %}
+</form>

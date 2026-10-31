@@ -1,0 +1,24 @@
+<div id="inbox" hx-get="/notifications/test" hx-trigger="notificationsChanged from:body" hx-include="#inbox-filter" hx-swap="outerHTML">
+  <form id="inbox-filter" class="chips toolbar" hx-get="/notifications/test" hx-target="#inbox" hx-swap="outerHTML" hx-trigger="change">
+    {% if recipients %}<label><input type="radio" name="to" value="" {% if not to %}checked{% endif %}><span>전체</span></label>{% endif %}
+    {% for r in recipients %}
+    <label><input type="radio" name="to" value="{{ r }}" {% if to == r %}checked{% endif %}><span>{{ r|phone if '@' not in r else r }}</span></label>
+    {% endfor %}
+  </form>
+  <div class="inbox">
+    {% for n in messages %}
+    <div class="inbox-item">
+      <div class="meta">
+        <strong class="num">{{ n.to|phone if n.channel == 'sms' else n.to }}</strong>
+        <span class="badge {{ 'badge-blue' if n.status == 'sent' else 'badge-red' }}">{{ tpl_label(n.template) }}{% if n.channel == 'email' %} · 메일{% endif %}{% if n.status != 'sent' %} · {{ st[n.status][0] }}{% endif %}</span>
+        <span class="spacer"></span>
+        <span class="muted small num">{{ (n.sent_at or n.scheduled_at).strftime('%m.%d %H:%M') }}</span>
+      </div>
+      <div class="bubble {{ 'is-failed' if n.status != 'sent' }}">{{ n.body }}</div>
+      {% if n.error %}<div class="desc t-red small">{{ n.error }}</div>{% endif %}
+    </div>
+    {% else %}
+    <p class="muted" style="margin:0">아직 받은 메시지가 없어요. 테스트 발송을 해 보거나, 출결에서 결석을 체크한 뒤 '예약 무시하고 지금 보내기'를 눌러 보세요.</p>
+    {% endfor %}
+  </div>
+</div>

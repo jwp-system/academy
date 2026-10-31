@@ -1,0 +1,85 @@
+{% from "macros.html" import icon %}
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f2f4f6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101013" media="(prefers-color-scheme: dark)">
+  <title>{% block title %}{{ academy_name }}{% endblock %}</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+  {# 속성 상속을 끈다: 바깥 요소의 hx-swap/hx-target 등이 안쪽 버튼에 몰래 적용되지 않게. CSRF 헤더만 body에서 상속. #}
+  <meta name="htmx-config" content='{"disableInheritance": true}'>
+  <script src="{{ url_for('static', path='js/htmx.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='js/alpine.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='js/app.js') }}"></script>
+</head>
+<body hx-headers='{"X-CSRF-Token": "{{ csrf_token(request) }}"}' hx-inherit="hx-headers">
+  {% if user %}
+  {% set path = request.url.path %}
+  {% set nav = [('/', '홈', 'home'), ('/attendance', '출결', 'check'), ('/students', '학생', 'users'), ('/classes', '반·시간표', 'calendar')] %}
+  {% if user.role == 'admin' %}
+  {% set nav = nav + [('/teachers', '강사', 'users'), ('/billing', '수납', 'calendar'), ('/notifications', '알림', 'check')] %}
+  {% set nav = nav + edition().nav_admin %}
+  {% endif %}
+  {% macro is_active(href) %}{{ 'active' if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) }}{% endmacro %}
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/" class="brand">{{ academy_name }}</a>
+      {% for href, label, _ in nav %}
+      <a href="{{ href }}" class="nav-link {{ is_active(href) }}">{{ label }}</a>
+      {% endfor %}
+      <div class="who">
+        {% if user.role == 'admin' and notify_test_mode() and edition().allow_live_notifications %}<a href="/notifications/test" class="badge badge-orange" title="문자·메일을 실제로 보내지 않아요">알림 테스트 모드</a>{% endif %}
+        <span>{{ user.name }}님</span>
+        {% if user.role == 'admin' %}<a href="/system/backup" class="btn btn-ghost btn-sm" title="지금 DB 사본을 내려받아요">DB 백업</a>{% endif %}
+        <form method="post" action="/logout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+          <button type="submit" class="btn btn-ghost btn-sm">로그아웃</button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabbar" x-data>
+    {% for href, label, ic in nav[:4] %}
+    <a href="{{ href }}" class="{{ is_active(href) }}">{{ icon(ic) }}{{ label.split('·')[0] }}</a>
+    {% endfor %}
+    <button type="button" @click="$refs.menu.showModal()">{{ icon('menu') }}전체</button>
+    <dialog class="modal" x-ref="menu" data-manual @click="$event.target === $el && $el.close()">
+      <div class="modal-header">
+        <h2>{{ user.name }}님</h2>
+        <button type="button" class="modal-close" aria-label="닫기" @click="$refs.menu.close()">{{ icon('x') }}</button>
+      </div>
+      <div class="modal-body">
+        {% for href, label, ic in nav %}
+        <a href="{{ href }}" class="list-item" style="color:inherit">
+          <span class="avatar">{{ icon(ic) }}</span>
+          <span class="main title">{{ label }}</span>
+          <span class="muted">{{ icon('chevron-right') }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% if user.role == 'admin' %}
+      <div class="modal-body" style="padding-top:0"><a href="/system/backup" class="btn btn-secondary btn-block">DB 백업 받기</a></div>
+      {% endif %}
+      <form method="post" action="/logout" class="modal-footer">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+        <button type="submit" class="btn btn-secondary">로그아웃</button>
+      </form>
+    </dialog>
+  </nav>
+  {% endif %}
+
+  {% include "_edition_banner.html" %}
+  {% block body %}
+  <main class="page {% block page_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+  {% endblock %}
+  <div id="modal"></div>
+</body>
+</html>

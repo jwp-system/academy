@@ -1,0 +1,33 @@
+{% from "macros.html" import modal_attrs, modal_header, icon %}
+<dialog {{ modal_attrs(none) }}>
+  {{ modal_header('입금 연결하기') }}
+  <form hx-post="/billing/deposits/{{ tx.id }}/link" hx-target="closest dialog" hx-swap="outerHTML"
+        x-data="{ picked: {}, get total() { return Object.values(this.picked).reduce((a, b) => a + b, 0) } }">
+    <div class="modal-body">
+      <dl class="kv">
+        <div><dt>입금자명</dt><dd>{{ tx.payer_name }}</dd></div>
+        <div><dt>금액</dt><dd class="num"><strong>{{ '{:,}'.format(tx.amount) }}원</strong></dd></div>
+        <div><dt>시각</dt><dd class="num">{{ tx.received_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      </dl>
+      <h3 style="margin:20px 0 8px">어느 청구의 입금인가요?</h3>
+      <p class="muted small" style="margin-top:0">여러 개를 고르면 오래된 달부터 채우고, 남는 돈은 마지막 청구에 더해요. 형제 합산 입금도 이렇게 나눠요.</p>
+      <div id="link-options">{% set options = options %}{% include "deposits/_options.html" %}</div>
+      <label class="search" style="margin-top:12px;display:block">
+        {{ icon('search') }}
+        <input class="input" type="search" name="q" placeholder="다른 학생 찾기" autocomplete="off"
+               hx-get="/billing/deposits/{{ tx.id }}/search" hx-trigger="input changed delay:300ms" hx-target="#search-options">
+      </label>
+      <div id="search-options"></div>
+      <div class="link-total" x-show="total > 0" x-cloak>
+        고른 청구 남은 금액 <strong x-text="total.toLocaleString() + '원'"></strong>
+        <span x-show="total !== {{ tx.amount }}" class="t-orange" x-text="total > {{ tx.amount }} ? '· 입금액이 모자라 부분 납부가 돼요' : '· 입금액이 더 많아요 (초과분은 마지막 청구에)'"></span>
+        <span x-show="total === {{ tx.amount }}" class="t-blue">· 입금액과 같아요</span>
+      </div>
+      <label class="check" style="margin-top:16px"><input type="checkbox" name="remember" checked>다음부터 '{{ tx.payer_name }}' 입금은 이 학생으로 자동 확인</label>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="this.closest('dialog').close()">취소</button>
+      <button type="submit" class="btn" :disabled="total === 0">연결하기</button>
+    </div>
+  </form>
+</dialog>

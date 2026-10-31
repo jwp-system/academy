@@ -1,0 +1,20 @@
+<div id="backup-list" hx-get="/backups" hx-trigger="backupsChanged from:body" hx-swap="outerHTML" style="margin-top:16px">
+  {% if stale %}
+  <div class="alert alert-error">최근 이틀 동안 백업이 없어요. PC가 꺼져 있었거나 폴더에 쓸 수 없는지 확인해 주세요.</div>
+  {% endif %}
+  <div class="card flush"><div class="table-wrap"><table class="table">
+    <thead><tr><th>만든 시각</th><th>파일</th><th>크기</th><th></th></tr></thead>
+    <tbody>
+    {% for f in files %}
+    <tr>
+      <td class="num">{{ f.at.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td class="d-only"><code>{{ f.name }}</code></td>
+      <td class="num">{{ '%.1f'|format(f.size / 1024 / 1024) }}MB</td>
+      <td class="actions"><a class="btn btn-secondary btn-sm" href="/backups/{{ f.name }}">내려받기</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="empty">아직 백업이 없어요</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div></div>
+</div>

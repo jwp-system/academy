@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ user.name }}님, 안녕하세요</h1>
+    <p class="sub">{{ today_label }} 학원 현황이에요</p>
+  </div>
+</div>
+{% include "dashboard/_body.html" %}
+{% endblock %}

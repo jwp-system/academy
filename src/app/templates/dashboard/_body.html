@@ -1,0 +1,132 @@
+{% from "macros.html" import icon %}
+<div id="dash" hx-get="/" hx-trigger="every 60s" hx-swap="outerHTML">
+  <div class="stats" style="margin-bottom:16px">
+    <a class="stat" href="/attendance">
+      <div class="label">오늘 수업</div>
+      <div class="value">{{ stats.today_sessions }}<small>개</small></div>
+    </a>
+    <a class="stat {{ 'is-alert' if stats.absent_today }}" href="#absentees">
+      <div class="label">오늘 결석</div>
+      <div class="value">{{ stats.absent_today }}<small>명</small></div>
+    </a>
+    {% if summary %}
+    <a class="stat {{ 'is-alert' if summary.rest }}" href="/billing">
+      <div class="label">{{ month.month }}월 미납 {{ summary.unpaid_count }}건</div>
+      <div class="value num">{{ '{:,}'.format(summary.rest) }}<small>원</small></div>
+    </a>
+    <a class="stat {{ 'is-alert' if review }}" href="/billing/deposits">
+      <div class="label">입금 확인 필요</div>
+      <div class="value">{{ review|length }}<small>건</small></div>
+    </a>
+    <a class="stat {{ 'is-alert' if failed }}" href="/notifications?status=failed">
+      <div class="label">발송 실패</div>
+      <div class="value">{{ failed|length }}<small>건</small></div>
+    </a>
+    {% else %}
+    <a class="stat {{ 'is-alert' if stats.unchecked }}" href="/attendance">
+      <div class="label">출결 미체크</div>
+      <div class="value">{{ stats.unchecked }}<small>명</small></div>
+    </a>
+    {% endif %}
+  </div>
+
+  {% if test_mode and edition().allow_live_notifications %}
+  <a class="banner" href="/notifications/test" style="color:inherit">
+    <div><strong>알림이 테스트 모드예요</strong>
+      <span class="muted small">문자·메일이 실제로 나가지 않고 테스트 수신함에 쌓여요. 게이트웨이를 연결하면 자동으로 실제 발송돼요.</span></div>
+    <span class="muted">{{ icon('chevron-right') }}</span>
+  </a>
+  {% endif %}
+
+  <div class="dash-grid">
+    <div class="stack">
+      <div class="card">
+        <div class="card-header"><h3>오늘 수업</h3><a href="/attendance" class="small">출결 체크 {{ icon('chevron-right') }}</a></div>
+        {% for s, cls in pairs %}
+        {% set c = counts[s.id] %}
+        <a class="dash-session {{ 'is-cancelled' if s.status == 'cancelled' }}" href="/attendance/sessions/{{ s.id }}">
+          <span class="time num">{{ s.start_time|hm }}</span>
+          <span class="main">
+            <span class="title"><span class="color-dot" style="background:{{ class_color(cls.id) }}"></span>{{ cls.name }}
+              {% if s.id in ongoing %}<span class="badge badge-blue">수업 중</span>{% endif %}
+              {% if s.status == 'cancelled' %}<span class="badge badge-grey">휴강</span>{% elif s.status == 'makeup' %}<span class="badge badge-green">보강</span>{% endif %}</span>
+            <span class="desc">{{ [s.room, teachers.get(s.teacher_id)]|select|join(' · ') }}
+              {% if s.status != 'cancelled' and c.total %} · {{ c.checked }}/{{ c.total }}명 체크{% if c.absent %} · <span class="t-red">결석 {{ c.absent }}</span>{% endif %}{% endif %}</span>
+            {% if s.status != 'cancelled' and c.total %}<span class="progress"><span style="width:{{ (c.checked * 100 / c.total)|round }}%"></span></span>{% endif %}
+          </span>
+        </a>
+        {% else %}
+        <p class="muted" style="margin:0">오늘은 수업이 없어요</p>
+        {% endfor %}
+      </div>
+
+      <div class="card" id="absentees">
+        <div class="card-header"><h3>오늘 결석 {{ absentees|length }}명</h3></div>
+        {% for st, cls, sess, has_phone in absentees %}
+        <div class="list-item">
+          <span class="avatar" style="background:var(--danger-weak);color:var(--danger)">{{ st.name[:1] }}</span>
+          <div class="main">
+            <div class="title"><a href="/students/{{ st.id }}" style="color:inherit">{{ st.name }}</a></div>
+            <div class="desc">{{ cls.name }} · {{ sess.start_time|hm }}{% if not has_phone %} · <span class="t-orange">문자 받을 보호자 없음</span>{% endif %}</div>
+          </div>
+        </div>
+        {% else %}
+        <p class="muted" style="margin:0">결석한 학생이 없어요</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <div class="card-header"><h3>할 일</h3></div>
+        {% for t in todos %}
+        <a class="todo" href="{{ t.href }}">
+          <span class="main">{{ t.label }}</span>
+          <span class="badge badge-{{ t.tone }}">{{ t.count }}</span>
+          <span class="muted">{{ icon('chevron-right') }}</span>
+        </a>
+        {% else %}
+        <p class="muted" style="margin:0">지금 처리할 일이 없어요 👍</p>
+        {% endfor %}
+      </div>
+
+      {% if summary %}
+      <div class="card">
+        <div class="card-header"><h3>{{ month.month }}월 수납</h3><a href="/billing" class="small">수납 {{ icon('chevron-right') }}</a></div>
+        {% set pct = (summary.paid * 100 / summary.billed)|round|int if summary.billed else 0 %}
+        <div class="pay-progress"><span style="width:{{ pct }}%"></span></div>
+        <div class="toolbar" style="justify-content:space-between;margin:8px 0 0">
+          <span class="small"><strong class="t-blue num">{{ '{:,}'.format(summary.paid) }}원</strong> 납부 ({{ pct }}%)</span>
+          <span class="small muted num">청구 {{ '{:,}'.format(summary.billed) }}원</span>
+        </div>
+      </div>
+
+      {% if review %}
+      <div class="card">
+        <div class="card-header"><h3>확인이 필요한 입금</h3><a href="/billing/deposits" class="small">입금 매칭 {{ icon('chevron-right') }}</a></div>
+        {% for tx in review %}
+        <div class="list-item">
+          <div class="main"><div class="title">{{ tx.payer_name }} <span class="num" style="font-weight:500">{{ '{:,}'.format(tx.amount) }}원</span></div>
+            <div class="desc num">{{ tx.received_at.strftime('%m.%d %H:%M') }} · {{ '확인 필요' if tx.match_status == 'review' else '미확인' }}</div></div>
+          <button class="btn btn-sm" hx-get="/billing/deposits/{{ tx.id }}/link" hx-target="#modal">연결</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if failed %}
+      <div class="card">
+        <div class="card-header"><h3>발송 실패</h3><a href="/notifications?status=failed" class="small">알림 {{ icon('chevron-right') }}</a></div>
+        {% for n, st in failed %}
+        <div class="list-item">
+          <div class="main"><div class="title">{{ tpl_label(n.template) }}{% if st %} · {{ st.name }}{% endif %}</div>
+            <div class="desc t-red">{{ n.error or '' }}</div></div>
+          <button class="btn btn-weak btn-sm" hx-post="/notifications/{{ n.id }}/retry" hx-swap="none">다시 보내기</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>

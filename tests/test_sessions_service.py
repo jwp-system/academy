@@ -2,7 +2,7 @@ from datetime import date, time, timedelta
 
 from sqlmodel import select
 
-from academy.models import (
+from app.models import (
     Attendance,
     ClassGroup,
     ClassSchedule,
@@ -11,7 +11,7 @@ from academy.models import (
     Student,
     User,
 )
-from academy.services import sessions as svc
+from app.services import sessions as svc
 
 MON = date(2026, 11, 2)  # 월요일
 

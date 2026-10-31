@@ -4,7 +4,7 @@ from datetime import date, time, timedelta
 import pytest
 from sqlmodel import select
 
-from academy.models import (
+from app.models import (
     Attendance,
     AttendanceStatus,
     ClassGroup,
@@ -14,9 +14,9 @@ from academy.models import (
     SessionStatus,
     User,
 )
-from academy.schemas import StudentIn
-from academy.services import attendance as svc
-from academy.services.students import create_student
+from app.schemas import StudentIn
+from app.services import attendance as svc
+from app.services.students import create_student
 
 TODAY = date.today()
 

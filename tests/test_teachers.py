@@ -3,8 +3,8 @@ import json
 import pytest
 from sqlmodel import select
 
-from academy.auth import verify_password
-from academy.models import Role, User
+from app.auth import verify_password
+from app.models import Role, User
 
 
 @pytest.fixture

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon %}
+{% block content %}
+<div class="page-header">
+  <div><h1>수납</h1><p class="sub">입금 알림 문자와 거래내역으로 납부를 자동 확인해요</p></div>
+</div>
+{% set active = 'deposits' %}{% include "billing/_subnav.html" %}
+
+<form id="dep-filters" class="chips toolbar" hx-get="/billing/deposits" hx-target="#dep-list" hx-swap="outerHTML" hx-trigger="change">
+  {% for key, (label, _) in filters.items() %}
+  {% set n = (counts.get('review', 0) + counts.get('unmatched', 0)) if key == '' else (counts.get(key, 0) if key != 'all' else 0) %}
+  <label><input type="radio" name="show" value="{{ key }}" {% if show == key %}checked{% endif %}><span>{{ label }}{% if n %} {{ n }}{% endif %}</span></label>
+  {% endfor %}
+</form>
+{% include "deposits/_list.html" %}
+
+<div class="grid-test">
+  <div class="card">
+    <div class="card-header"><h3>거래내역 올리기</h3></div>
+    <p class="muted small" style="margin-top:-8px">인터넷뱅킹에서 받은 입금 거래내역(.xlsx, .csv)을 올리면 같은 규칙으로 한꺼번에 확인해요. 이미 받은 입금은 건너뛰어요.</p>
+    <form hx-post="/billing/deposits/upload" hx-encoding="multipart/form-data" hx-target="#upload-result" hx-disabled-elt="find button">
+      <div class="dropzone">
+        <input type="file" name="file" accept=".xlsx,.csv,.xls" required>
+        <button type="submit" class="btn">올리기</button>
+      </div>
+    </form>
+    <div id="upload-result"></div>
+  </div>
+
+  {% if not edition().allow_webhooks %}
+  <div class="card">
+    <div class="card-header"><h3>입금 문자 자동 수신</h3><span class="badge">{{ edition().label }}</span></div>
+    <p class="muted" style="margin:0">{{ edition().label }}에서는 실제 입금 문자를 받지 않아요. 아래 <strong>입금 문자 테스트</strong>에 은행 문자를 넣어 자동 매칭을 체험해 보세요.</p>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-header">
+      <h3>입금 문자 자동 수신</h3>
+      {% if hook.ready %}<span class="badge badge-green">사용 중</span>{% else %}<span class="badge badge-orange">설정 필요</span>{% endif %}
+    </div>
+    <dl class="kv">
+      <div><dt>웹훅 검증</dt><dd>{{ {'signing_key': '서명 키', 'token': 'URL 토큰'}.get(hook.method, '설정 안 됨') }}</dd></div>
+      <div><dt>은행 발신번호</dt><dd>{{ hook.senders|join(', ') or '설정 안 됨' }}</dd></div>
+      <div><dt>마지막 수신</dt><dd class="num">{{ hook.last_sms.strftime('%Y-%m-%d %H:%M') if hook.last_sms else '-' }}</dd></div>
+    </dl>
+    {% if not hook.ready %}
+    <details style="margin-top:12px">
+      <summary class="muted small" style="cursor:pointer">설정 방법</summary>
+      <ol class="small" style="padding-left:18px;color:var(--text-2)">
+        <li>게이트웨이 폰으로 은행 입금 알림 문자를 받도록 은행 앱에서 설정해요.</li>
+        <li><code>.env</code>에 <code>ACADEMY_BANK_SENDER_NUMBERS</code>(은행 문자 발신번호, 예: 15881688)와
+          <code>ACADEMY_SMS_WEBHOOK_SIGNING_KEY</code>(게이트웨이 앱 Settings → Webhooks → Signing Key)를 넣고 서버를 다시 켜요.</li>
+        <li>게이트웨이에 웹훅을 등록해요. 주소는 Cloudflare Tunnel의 <strong>https</strong> 주소여야 해요 (사설 IP·http는 게이트웨이 앱이 거부해요).
+          <pre class="code">curl -X POST -u 아이디:비밀번호 -H "Content-Type: application/json" \
+  -d '{"url": "https://학원주소/webhooks/sms-inbound", "event": "sms:received"}' \
+  http://게이트웨이IP:8080/webhooks</pre></li>
+      </ol>
+    </details>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="card" x-data="{ text: '' }">
+  <div class="card-header"><h3>입금 문자 테스트</h3><span class="muted small">웹훅과 같은 처리를 화면에서 해 봐요 (발신번호 확인만 건너뜀)</span></div>
+  <div class="tpl-fields" style="margin:0 0 12px">
+    {% for label, sample in samples %}
+    <button type="button" class="chip-btn" @click="text = {{ sample|tojson|forceescape }}; $nextTick(() => $refs.ta.dispatchEvent(new Event('input', {bubbles: true})))">{{ label }}</button>
+    {% endfor %}
+  </div>
+  <form hx-post="/billing/deposits/simulate" hx-swap="none">
+    <div class="tpl-grid">
+      <div>
+        <textarea class="input" name="text" rows="7" x-model="text" x-ref="ta" placeholder="은행 입금 알림 문자를 붙여 넣어 보세요"
+                  hx-post="/billing/deposits/preview" hx-trigger="input delay:300ms" hx-target="#sms-preview"></textarea>
+        <button type="submit" class="btn" style="margin-top:12px">이 문자를 받은 것으로 처리</button>
+      </div>
+      <div id="sms-preview" class="phone-preview">{% include "deposits/_preview.html" %}</div>
+    </div>
+  </form>
+</div>
+{% endblock %}

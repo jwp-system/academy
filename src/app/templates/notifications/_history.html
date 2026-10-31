@@ -1,0 +1,30 @@
+<div id="noti-history" hx-get="/notifications" hx-trigger="notificationsChanged from:body" hx-include="#noti-filters" hx-swap="outerHTML">
+  <div class="card flush"><div class="table-wrap"><table class="table">
+    <thead><tr><th>시각</th><th>유형</th><th class="d-only">받는 곳</th><th>내용</th><th>상태</th><th></th></tr></thead>
+    <tbody>
+    {% for n, s in rows %}
+    <tr>
+      <td class="num" style="white-space:nowrap">{{ (n.sent_at or n.scheduled_at).strftime('%m.%d %H:%M') }}
+        {% if n.status == 'pending' %}<div class="desc">예약</div>{% endif %}</td>
+      <td><span class="name">{{ tpl_label(n.template) }}</span>
+        <div class="desc">{% if s %}<a href="/students/{{ s.id }}">{{ s.name }}</a>{% else %}시스템{% endif %}{% if n.provider == 'test' %} · 테스트{% endif %}</div></td>
+      <td class="d-only num">{{ n.to|phone if n.channel == 'sms' else n.to }}{% if n.channel == 'email' %}<div class="desc">이메일</div>{% endif %}</td>
+      <td class="msg-cell">{{ n.body }}{% if n.error %}<div class="desc t-red">{{ n.error }}{% if n.attempts %} ({{ n.attempts }}회 시도){% endif %}</div>{% endif %}</td>
+      <td><span class="badge badge-{{ st[n.status][1] }}">{{ st[n.status][0] }}</span></td>
+      <td class="actions">
+        {% if n.status == 'failed' %}<button class="btn btn-weak btn-sm" hx-post="/notifications/{{ n.id }}/retry" hx-swap="none">다시 보내기</button>
+        {% elif n.status == 'pending' %}<button class="btn btn-ghost btn-sm" hx-post="/notifications/{{ n.id }}/cancel" hx-swap="none"
+                hx-confirm="이 알림을 보내지 않을까요?" data-confirm-ok="발송 취소">취소</button>{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="empty">알림이 없어요</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div></div>
+  {% if more %}
+  <div style="text-align:center;margin-top:12px">
+    <button class="btn btn-secondary" hx-get="/notifications?limit={{ limit + 50 }}" hx-include="#noti-filters" hx-target="#noti-history" hx-swap="outerHTML">더 보기</button>
+  </div>
+  {% endif %}
+</div>

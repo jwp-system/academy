@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "macros.html" import icon %}
+{% block content %}
+<div class="page-header">
+  <div><h1>알림</h1><p class="sub">게이트웨이 연결을 확인하고, 문자가 어떻게 가는지 미리 볼 수 있어요</p></div>
+</div>
+{% set active = 'test' %}{% include "notifications/_subnav.html" %}
+
+<div class="card">
+  <div class="card-header">
+    <h3>발송 경로</h3>
+    <button class="btn btn-secondary btn-sm" hx-get="/notifications/check" hx-target="#channels" hx-swap="outerHTML" hx-disabled-elt="this">연결 확인</button>
+  </div>
+  {% include "notifications/_channels.html" %}
+  {% if test_mode and edition().allow_live_notifications %}
+  <p class="muted small" style="margin:12px 0 0">실제로 보내려면 <code>.env</code>에 <code>ACADEMY_SMS_GATEWAY_URL</code>, <code>ACADEMY_SMS_GATEWAY_USER</code>, <code>ACADEMY_SMS_GATEWAY_PASSWORD</code>(게이트웨이 앱의 Local Server 화면 값)와 Gmail <code>ACADEMY_SMTP_USER</code>, <code>ACADEMY_SMTP_PASSWORD</code>(앱 비밀번호)를 넣고 서버를 다시 켜 주세요.</p>
+  {% endif %}
+</div>
+
+<div class="grid-test">
+  <div class="card">
+    <div class="card-header"><h3>테스트 발송</h3></div>
+    {% include "notifications/_test_form.html" %}
+  </div>
+
+  {% if test_mode %}
+  <div class="card">
+    <div class="card-header"><h3>테스트 도구</h3></div>
+    <div class="list-item">
+      <div class="main"><div class="title">예약 무시하고 지금 보내기</div>
+        <div class="desc">결석 알림(수업 시작 10분 뒤)이나 야간에 미뤄진 알림을 바로 확인할 때. 테스트 모드 채널만 보내요.</div></div>
+      <button class="btn btn-weak" hx-post="/notifications/test/flush" hx-swap="none">지금 보내기</button>
+    </div>
+    <div class="list-item">
+      <div class="main"><div class="title">발송 실패 흉내</div>
+        <div class="desc">켜면 테스트 발송이 실패해요. 재시도(최대 3회), 실패 목록, 게이트웨이 장애 메일을 확인할 때. 서버를 다시 켜면 꺼져요.</div></div>
+      <label class="switch"><input type="checkbox" name="fail" {% if fail %}checked{% endif %} hx-post="/notifications/test/fail" hx-swap="none"><span></span></label>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% if test_mode or messages %}
+<div class="card">
+  <div class="card-header"><h3>테스트 수신함</h3><span class="muted small">실제로 보내지 않은 문자·메일이 여기 쌓여요</span></div>
+  {% include "notifications/_inbox.html" %}
+</div>
+{% endif %}
+{% endblock %}

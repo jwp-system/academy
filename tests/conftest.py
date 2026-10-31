@@ -7,19 +7,27 @@ _tmp = tempfile.mkdtemp()
 os.environ["ACADEMY_DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
 os.environ["ACADEMY_SCHEDULER_ENABLED"] = "false"
 os.environ["ACADEMY_SMS_WEBHOOK_TOKEN"] = "test-token"
+# .env에 게이트웨이·메일 접속 정보가 있어도 테스트 중에는 절대 실제로 보내지 않는다
+os.environ["ACADEMY_SMS_MODE"] = "test"
+os.environ["ACADEMY_EMAIL_MODE"] = "test"
+os.environ["ACADEMY_ACADEMY_NAME"] = "테스트학원"
+os.environ["ACADEMY_BANK_ACCOUNT"] = "OO은행 123-456"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlmodel import Session, SQLModel  # noqa: E402
 
-from academy.auth import hash_password  # noqa: E402
-from academy.db import engine  # noqa: E402
-from academy.main import app  # noqa: E402
-from academy.models import Role, User  # noqa: E402
+from app.auth import hash_password  # noqa: E402
+from app.db import engine  # noqa: E402
+from app.main import create_app  # noqa: E402
+from app.models import Role, User  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
 def db():
+    from app.services.notify.channels import TEST
+
+    TEST.fail = False
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         yield session
@@ -28,7 +36,7 @@ def db():
 
 @pytest.fixture
 def client():
-    with TestClient(app) as c:
+    with TestClient(create_app()) as c:
         yield c
 
 

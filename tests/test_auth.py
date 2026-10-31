@@ -1,4 +1,4 @@
-from academy.models import Role
+from app.models import Role
 from tests.conftest import get_csrf
 
 
@@ -33,13 +33,13 @@ def test_admin_sees_dashboard(client, login):
     login()
     resp = client.get("/")
     assert resp.status_code == 200
-    assert "이번 달 미납" in resp.text
+    assert "입금 확인 필요" in resp.text
 
 
 def test_teacher_cannot_access_admin_pages(client, login):
     login(Role.teacher)
     assert client.get("/").status_code == 200
-    assert "이번 달 미납" not in client.get("/").text
+    assert "입금 확인 필요" not in client.get("/").text
     assert client.get("/billing").status_code == 403
 
 
@@ -50,10 +50,49 @@ def test_htmx_partial(client, login):
     assert "아직 등록된 학생이 없어요" in resp.text
 
 
-def test_webhook_requires_token(client):
-    payload = {"sender": "1588", "message": "입금"}
-    assert client.post("/webhooks/sms-inbound", json=payload).status_code == 401
-    resp = client.post(
-        "/webhooks/sms-inbound", json=payload, headers={"X-Webhook-Token": "test-token"}
-    )
-    assert resp.json() == {"status": "ignored"}
+def test_healthz_without_login(client):
+    r = client.get("/healthz")
+    assert r.status_code == 200 and r.json() == {
+        "status": "ok",
+        "db": True,
+        "scheduler": "disabled",
+    }
+
+
+def test_backup_download(client, login):
+    import sqlite3
+    import tempfile
+
+    login()
+    r = client.get("/system/backup")
+    assert r.status_code == 200 and "attachment" in r.headers["content-disposition"]
+    with tempfile.NamedTemporaryFile(suffix=".db") as f:
+        f.write(r.content)
+        f.flush()
+        tables = {
+            t
+            for (t,) in sqlite3.connect(f.name).execute(
+                "select name from sqlite_master where type='table'"
+            )
+        }
+    assert {"students", "invoices", "users"} <= tables
+
+
+def test_backup_admin_only(client, login):
+    from app.models import Role
+
+    login(Role.teacher)
+    assert client.get("/system/backup").status_code == 403
+
+
+def test_refuses_default_secret_in_production(monkeypatch):
+    import pytest
+
+    from app.config import get_settings
+    from app.main import create_app
+
+    s = get_settings()
+    monkeypatch.setattr(s, "cookie_secure", True)
+    monkeypatch.setattr(s, "secret_key", "change-me")
+    with pytest.raises(RuntimeError, match="ACADEMY_SECRET_KEY"):
+        create_app()

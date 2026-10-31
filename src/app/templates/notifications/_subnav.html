@@ -1,0 +1,5 @@
+<nav class="segmented" aria-label="알림">
+  <a href="/notifications" class="{{ 'active' if active == 'history' }}">발송 이력</a>
+  <a href="/notifications/templates" class="{{ 'active' if active == 'templates' }}">문구</a>
+  <a href="/notifications/test" class="{{ 'active' if active == 'test' }}">테스트{% if test_mode %} <span class="badge badge-orange" style="height:18px;padding:0 6px;margin-left:2px">테스트 모드</span>{% endif %}</a>
+</nav>

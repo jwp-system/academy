@@ -1,0 +1,17 @@
+<div class="card" style="margin-top:16px">
+  <h3 style="margin-bottom:4px">바로 둘러보기</h3>
+  <p class="muted small">가입 없이 데모 계정으로 들어가요. 화면에 보이는 학생·연락처는 모두 가짜예요.</p>
+  <div class="grid-2" style="gap:8px">
+    {% for role, label in [('admin', '원장으로 둘러보기'), ('teacher', '강사로 둘러보기')] %}
+    <form method="post" action="/demo/login/{{ role }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+      <button type="submit" class="btn {{ '' if role == 'admin' else 'btn-weak' }} btn-block">{{ label }}</button>
+    </form>
+    {% endfor %}
+  </div>
+  <form method="post" action="/demo/reset" style="margin-top:12px;text-align:center"
+        onsubmit="return confirm('데모 데이터를 처음 상태로 되돌릴까요? 다른 사람이 바꾼 내용도 모두 사라져요.')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+    <button type="submit" class="btn btn-ghost btn-sm">데모 처음 상태로 되돌리기</button>
+  </form>
+</div>
