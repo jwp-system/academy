@@ -1,0 +1,20 @@
+# /etc/caddy/Caddyfile
+# 데모판(네이버클라우드). 도메인만 바꾸면 Let's Encrypt 인증서를 자동으로 받고 갱신한다 (80·443 포트가 열려 있어야 함).
+demo.example.com {
+	encode gzip
+
+	# 거래내역·명단 엑셀 업로드 여유
+	request_body {
+		max_size 10MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:8000
+}

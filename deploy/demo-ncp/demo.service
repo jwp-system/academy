@@ -1,0 +1,24 @@
+# /etc/systemd/system/demo.service — 데모판 (네이버클라우드)
+# 프로세스 하나로만 띄운다 (스케줄러가 앱 안에서 돈다).
+[Unit]
+Description=Academy demo (FastAPI + HTMX)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=academy
+Group=academy
+WorkingDirectory=/srv/academy
+Environment=TZ=Asia/Seoul
+ExecStart=/srv/academy/.venv/bin/demo serve --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/srv/academy/data
+
+[Install]
+WantedBy=multi-user.target
