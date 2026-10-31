@@ -15,6 +15,7 @@
   <script src="{{ url_for('static', path='js/htmx.min.js') }}"></script>
   <script defer src="{{ url_for('static', path='js/alpine.min.js') }}"></script>
   <script defer src="{{ url_for('static', path='js/app.js') }}"></script>
+  {% block head %}{% endblock %}
 </head>
 <body hx-headers='{"X-CSRF-Token": "{{ csrf_token(request) }}"}' hx-inherit="hx-headers">
   {% if user %}

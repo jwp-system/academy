@@ -24,6 +24,8 @@ class Edition:
     template_dirs: list[Path] = field(default_factory=list)
     # 판 전용 화면 (CSRF 검증이 붙는다)
     routers: list[APIRouter] = field(default_factory=list)
+    # 로그인 안 한 방문자가 첫 주소(/)로 오면 보낼 곳. None이면 로그인 화면 (데모판: 소개 페이지)
+    landing_path: str | None = None
     # 원장 메뉴에 덧붙일 링크 [(주소, 이름, 아이콘)]
     nav_admin: list[tuple[str, str, str]] = field(default_factory=list)
     # 판 전용 스케줄러 작업 등록

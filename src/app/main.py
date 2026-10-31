@@ -73,8 +73,11 @@ def create_app(ed: edition.Edition = edition.BASE) -> FastAPI:
 
     @app.exception_handler(auth.LoginRequired)
     async def _login_required(request: Request, _exc: auth.LoginRequired):
+        target = "/login"
+        if request.url.path == "/" and ed.landing_path:
+            target = ed.landing_path
         if is_htmx(request):
-            return Response(status_code=204, headers={"HX-Redirect": "/login"})
-        return RedirectResponse("/login", status_code=303)
+            return Response(status_code=204, headers={"HX-Redirect": target})
+        return RedirectResponse(target, status_code=303)
 
     return app

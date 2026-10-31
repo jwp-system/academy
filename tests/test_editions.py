@@ -203,3 +203,40 @@ def test_academy_edition_jobs_and_webhook():
     ed = build()
     assert ed.allow_live_notifications and ed.allow_webhooks
     assert "backup" in {j.id for j in create_scheduler(ed.add_jobs).get_jobs()}
+
+
+def test_demo_landing_is_intro(demo_client):
+    r = demo_client.get("/", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/intro"
+    page = demo_client.get("/intro").text
+    assert "운영비 0원" in page and "원장으로 둘러보기" in page and "무엇부터 볼까요?" in page
+    assert demo_client.get("/login").status_code == 200  # 로그인 화면은 그대로
+
+
+def test_demo_scenario_login_opens_screen(demo_client):
+    token = _csrf(demo_client)
+    r = demo_client.post(
+        "/demo/login/admin?next=/billing/deposits",
+        data={"csrf_token": token},
+        follow_redirects=False,
+    )
+    assert r.headers["location"] == "/billing/deposits"
+    assert "대시보드로 가기" in demo_client.get("/intro").text  # 로그인하면 체험 버튼 대신
+    for bad in ("//evil.com", "https://evil.com", "/\\evil.com"):
+        r = demo_client.post(
+            f"/demo/login/admin?next={bad}",
+            data={"csrf_token": _csrf(demo_client)},
+            follow_redirects=False,
+        )
+        assert r.headers["location"] == "/", bad
+    r = demo_client.post("/logout", data={"csrf_token": _csrf(demo_client)}, follow_redirects=True)
+    assert r.url.path == "/intro"
+
+
+def test_academy_landing_is_login(client):
+    from academy.edition import build
+
+    with TestClient(create_app(build())) as c:
+        r = c.get("/", follow_redirects=False)
+        assert r.headers["location"] == "/login"
+        assert c.get("/intro").status_code == 404

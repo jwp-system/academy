@@ -4,7 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.edition import Edition
 from demo import seed
-from demo.routes import router
+from demo.routes import intro_router, router
 
 HERE = Path(__file__).parent
 RESET_HOUR = 4
@@ -21,7 +21,8 @@ def build() -> Edition:
         allow_live_notifications=False,  # 어떤 설정이 들어와도 실제 발송 금지
         allow_webhooks=False,
         template_dirs=[HERE / "templates"],
-        routers=[router],
+        routers=[router, intro_router],
+        landing_path="/intro",
         add_jobs=_add_jobs,
         on_startup=seed.ensure_seeded,
     )

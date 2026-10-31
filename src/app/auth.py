@@ -120,4 +120,5 @@ def login(
 @router.post("/logout", dependencies=[Depends(verify_csrf)])
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse("/login", status_code=303)
+    # 첫 주소로: 구축판은 로그인 화면, 데모판은 소개 페이지로 이어진다
+    return RedirectResponse("/", status_code=303)
