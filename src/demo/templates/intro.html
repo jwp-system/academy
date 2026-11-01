@@ -1,247 +1,469 @@
 {% extends "base.html" %}
 {% from "macros.html" import icon %}
-{% block title %}{{ academy_name }} · 작은 학원을 위한 학원 관리{% endblock %}
+{% block title %}{{ site.product }} - 출결부터 수납, 문자 알림까지 학원 운영을 한 곳에서{% endblock %}
 
 {% macro try_button(role, next, label, cls="") -%}
 {% if me %}
-<a href="{{ next }}" class="btn {{ cls }}">{{ label }}</a>
+<a href="{{ next }}" class="lp-btn {{ cls }}">{{ label }}</a>
 {% else %}
-<form method="post" action="/demo/login/{{ role }}?next={{ next|urlencode }}" class="intro-form">
+<form method="post" action="/demo/login/{{ role }}?next={{ next|urlencode }}" class="lp-form">
   <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
-  <button type="submit" class="btn {{ cls }}">{{ label }}</button>
+  <button type="submit" class="lp-btn {{ cls }}">{{ label }}</button>
 </form>
 {% endif %}
 {%- endmacro %}
 
+{% macro section_head(label, title, sub=None) -%}
+<p class="lp-label">{{ label }}</p>
+<h2 class="lp-h2">{{ title }}</h2>
+{% if sub %}<p class="lp-sub">{{ sub }}</p>{% endif %}
+{%- endmacro %}
+
 {% block head %}
 <style>
-  .intro { max-width: 1080px; margin: 0 auto; padding: 0 24px 80px; }
-  .intro-top { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-  .intro-top .brand { font-size: 18px; font-weight: 800; color: var(--text); }
-  .intro-form { display: inline; margin: 0; }
+  body { background: var(--surface); }
+  html { scroll-behavior: smooth; }
+  section[id] { scroll-margin-top: 80px; }
+  .lp-wrap { max-width: 1152px; margin: 0 auto; padding: 0 20px; }
+  .lp-form { display: inline-flex; margin: 0; }
 
-  .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; padding: 56px 0 72px; }
-  .hero .eyebrow { display: inline-block; padding: 6px 12px; border-radius: 999px; background: var(--primary-weak); color: var(--primary-weak-text); font-size: 14px; font-weight: 700; }
-  .hero h1 { margin: 18px 0 16px; font-size: 44px; line-height: 1.25; letter-spacing: -0.035em; }
-  .hero h1 em { font-style: normal; color: var(--primary); }
-  .hero .lead { font-size: 18px; color: var(--text-2); margin-bottom: 28px; }
-  .hero .cta { display: flex; gap: 10px; flex-wrap: wrap; }
-  .hero .cta .btn { height: 56px; padding: 0 26px; font-size: 17px; border-radius: 16px; }
-  .hero .note { margin-top: 14px; font-size: 13px; color: var(--text-3); }
+  /* 버튼 */
+  .lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 56px; padding: 0 28px; border: 0; border-radius: 16px;
+            background: var(--primary); color: #fff; font: 700 17px var(--font); cursor: pointer; transition: background-color .15s, transform .1s;
+            box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--primary) 55%, transparent); white-space: nowrap; }
+  .lp-btn:hover { background: var(--blue-700); color: #fff; }
+  .lp-btn:active { transform: scale(.98); }
+  .lp-btn.ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+  .lp-btn.ghost:hover { background: var(--surface-2); color: var(--text); }
+  .lp-btn.small { height: 36px; padding: 0 16px; font-size: 13px; border-radius: 12px; box-shadow: none; }
+  .lp-btn.gray { background: var(--surface-3); color: var(--text); box-shadow: none; }
+  .lp-btn.gray:hover { background: var(--border); color: var(--text); }
+  .lp-btn.white { background: #fff; color: var(--blue-600); box-shadow: none; }
+  .lp-btn.white:hover { background: #f2f7ff; color: var(--blue-700); }
+  .lp-btn.block { width: 100%; height: 48px; font-size: 15px; border-radius: 14px; }
 
-  .mock { position: relative; justify-self: center; width: 300px; padding: 18px 16px 112px; border-radius: 36px; background: var(--surface); box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
-  .mock .bar { width: 72px; height: 6px; margin: 0 auto 16px; border-radius: 3px; background: var(--border); }
-  .mock h4 { margin: 0 4px 2px; font-size: 17px; }
-  .mock .sub { margin: 0 4px 12px; font-size: 12px; color: var(--text-3); }
-  .mock .att-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .mock .att-tile .main { min-height: 64px; padding: 8px 4px; border-radius: 14px; cursor: default; }
-  .mock .att-tile .name { font-size: 14px; }
-  .mock .att-tile .state { font-size: 11px; }
-  .mock-sms { position: absolute; right: -36px; bottom: -28px; width: 230px; padding: 12px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
-  .mock-sms .from { font-size: 11px; color: var(--text-3); margin-bottom: 6px; }
-  .mock-sms .bubble { font-size: 12.5px; }
+  /* 헤더 */
+  .lp-header { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--surface) 85%, transparent);
+               backdrop-filter: blur(12px); border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+  .lp-header .lp-wrap { height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .lp-logo { display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+  .lp-logo:hover { color: var(--text); }
+  .lp-logo img { width: 36px; height: 36px; }
+  .lp-nav { display: flex; gap: 28px; font-size: 14px; font-weight: 600; }
+  .lp-nav a { color: var(--text-3); }
+  .lp-nav a:hover { color: var(--text); }
+  .lp-header .right { display: flex; gap: 8px; }
 
-  .section { padding: 56px 0 8px; }
-  .section > h2 { font-size: 30px; letter-spacing: -0.03em; margin-bottom: 8px; }
-  .section > .lead { color: var(--text-3); font-size: 16px; margin-bottom: 28px; }
+  /* 히어로 */
+  .lp-hero { padding: 64px 0 80px; background: linear-gradient(to bottom, color-mix(in srgb, var(--primary-weak) 50%, transparent), var(--surface)); }
+  .lp-hero .lp-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .lp-eyebrow { display: inline-block; padding: 6px 14px; border-radius: 999px; background: var(--primary-weak); color: var(--primary-weak-text); font-size: 13px; font-weight: 700; }
+  .lp-hero h1 { margin: 22px 0 22px; font-size: 52px; font-weight: 900; line-height: 1.2; letter-spacing: -0.04em; }
+  .lp-hero h1 span { color: var(--primary); }
+  .lp-hero .lead { font-size: 18px; font-weight: 500; color: var(--text-3); line-height: 1.7; margin-bottom: 28px; }
+  .lp-hero .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .lp-hero .note { margin-top: 18px; font-size: 13px; color: var(--text-3); }
+  .lp-hero .note b { color: var(--text); }
 
-  .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .feature { padding: 22px; border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow); }
-  .feature .ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--primary-weak); color: var(--primary); margin-bottom: 14px; }
-  .feature h3 { font-size: 17px; margin-bottom: 6px; }
-  .feature p { margin: 0; font-size: 14px; color: var(--text-2); }
+  /* 히어로 화면 미리보기 */
+  .lp-shots { position: relative; height: 380px; }
+  .lp-board { position: absolute; right: 0; top: 10px; width: 440px; border-radius: 20px; overflow: hidden; background: var(--bg); border: 1px solid var(--border); box-shadow: var(--shadow-lg); }
+  .lp-board .bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--primary); color: #fff; font-size: 14px; font-weight: 700; }
+  .lp-board .bar i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.6); }
+  .lp-board .bar span { margin-left: auto; font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,.18); }
+  .lp-board .body { padding: 14px; display: grid; gap: 10px; }
+  .lp-board .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .lp-board .stat { padding: 12px; border-radius: 12px; background: var(--surface); font-size: 11px; color: var(--text-3); }
+  .lp-board .stat b { display: block; font-size: 20px; color: var(--text); letter-spacing: -0.03em; }
+  .lp-board .stat b.red { color: var(--danger); }
+  .lp-board .lp-todo { padding: 4px 12px; border-radius: 12px; background: var(--surface); }
+  .lp-board .lp-todo div { display: flex; justify-content: space-between; padding: 9px 0; font-size: 12.5px; border-bottom: 1px solid var(--border); }
+  .lp-board .lp-todo div:last-child { border: 0; }
+  .lp-board .lp-todo em { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 6px; background: var(--danger-weak); color: var(--danger); }
+  .lp-board .lp-todo em.o { background: var(--warning-weak); color: var(--warning); }
+  .lp-phone { position: absolute; left: 0; top: 60px; width: 190px; padding: 14px 10px 16px; border-radius: 30px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lg); }
+  .lp-phone .notch { width: 56px; height: 5px; margin: 0 auto 12px; border-radius: 3px; background: var(--border); }
+  .lp-phone h4 { margin: 0 4px; font-size: 13px; }
+  .lp-phone p { margin: 0 4px 8px; font-size: 10px; color: var(--text-3); }
+  .lp-phone .att-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .lp-phone .att-tile .main { min-height: 46px; padding: 4px 2px; border-radius: 10px; border-width: 1.5px; cursor: default; gap: 1px; }
+  .lp-phone .att-tile .name { font-size: 11px; }
+  .lp-phone .att-tile .state { font-size: 9px; }
+  .lp-phone .sms { margin-top: 10px; padding: 8px 10px; border-radius: 4px 14px 14px 14px; background: var(--surface-3); font-size: 10px; line-height: 1.5; color: var(--text-2); }
 
-  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; counter-reset: flow; }
-  .flow li { list-style: none; position: relative; padding: 0 16px 0 0; counter-increment: flow; }
-  .flow li::before { content: counter(flow); display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 800; margin-bottom: 12px; position: relative; z-index: 1; }
-  .flow li::after { content: ""; position: absolute; top: 17px; left: 36px; right: 0; height: 2px; background: var(--border); }
-  .flow li:last-child::after { display: none; }
-  .flow .when { font-size: 13px; font-weight: 700; color: var(--primary); }
-  .flow h3 { font-size: 16px; margin: 2px 0 4px; }
-  .flow p { font-size: 14px; color: var(--text-2); margin: 0; }
-  .flow { padding: 0; margin: 0; }
+  /* 섹션 */
+  .lp-section { padding: 88px 0; }
+  .lp-section.tint { background: var(--surface-2); }
+  .lp-label { margin: 0 0 10px; text-align: center; font-size: 12px; font-weight: 800; letter-spacing: .22em; color: var(--primary); }
+  .lp-h2 { text-align: center; font-size: 36px; font-weight: 900; letter-spacing: -0.035em; line-height: 1.3; margin-bottom: 12px; }
+  .lp-sub { text-align: center; color: var(--text-3); font-size: 16px; margin: 0 auto 40px; max-width: 640px; }
 
-  .zero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .zero .item { padding: 24px; border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow); }
-  .zero .won { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; color: var(--primary); }
-  .zero h3 { font-size: 16px; margin: 6px 0 4px; }
-  .zero p { margin: 0; font-size: 14px; color: var(--text-2); }
+  .lp-pains { max-width: 900px; margin: 40px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; list-style: none; padding: 0; }
+  .lp-pains li { display: flex; gap: 12px; align-items: flex-start; padding: 20px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border); font-weight: 600; font-size: 15px; }
+  .lp-pains li::before { content: "✓"; color: var(--primary); font-weight: 900; }
+  .lp-summary { margin-top: 28px; text-align: center; color: var(--text-3); }
+  .lp-summary b { color: var(--primary); }
 
-  .scenarios { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .scenario { display: flex; flex-direction: column; gap: 6px; padding: 22px; border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow); }
-  .scenario .role { align-self: flex-start; }
-  .scenario h3 { font-size: 17px; margin: 4px 0 0; }
-  .scenario p { margin: 0 0 10px; font-size: 14px; color: var(--text-2); flex: 1; }
-  .scenario .btn { width: 100%; }
-  .scenario .intro-form { display: block; }
+  .lp-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .lp-step { padding: 18px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); border-top: 4px solid var(--c, var(--primary)); }
+  .lp-step .n { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: var(--text-4); }
+  .lp-step .who { margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--c, var(--primary)); }
+  .lp-step .what { font-weight: 800; font-size: 16px; margin-top: 2px; }
+  .lp-step .when { font-size: 13px; color: var(--text-3); margin-top: 4px; }
+  .lp-note { margin-top: 20px; text-align: center; font-size: 14px; color: var(--text-3); }
 
-  .faq { display: grid; gap: 10px; }
-  .faq details { padding: 18px 22px; border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow); }
-  .faq summary { cursor: pointer; font-weight: 700; font-size: 16px; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
-  .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: "+"; color: var(--text-3); font-weight: 400; font-size: 20px; line-height: 1; }
-  .faq details[open] summary::after { content: "−"; }
-  .faq p { margin: 10px 0 0; color: var(--text-2); font-size: 15px; }
+  .lp-features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .lp-feature { padding: 24px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); }
+  .lp-feature .ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--primary-weak); color: var(--primary); margin-bottom: 14px; }
+  .lp-feature h3 { font-size: 17px; margin-bottom: 6px; }
+  .lp-feature p { margin: 0; font-size: 14px; color: var(--text-2); }
 
-  .final { margin-top: 64px; padding: 44px 32px; border-radius: var(--radius-xl); background: var(--text); color: var(--surface); text-align: center; }
-  .final h2 { color: var(--surface); font-size: 28px; margin-bottom: 8px; }
-  .final p { color: color-mix(in srgb, var(--surface) 70%, transparent); margin-bottom: 24px; }
-  .final .cta { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  .final .btn-secondary { background: color-mix(in srgb, var(--surface) 14%, transparent); color: var(--surface); }
-  .intro-foot { margin-top: 32px; text-align: center; font-size: 13px; color: var(--text-3); }
+  .lp-roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .lp-role { padding: 28px; border-radius: 20px; background: var(--surface-2); border: 1px solid var(--border); }
+  .lp-role .tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--primary-weak); color: var(--primary-weak-text); }
+  .lp-role h3 { font-size: 20px; margin: 12px 0 12px; }
+  .lp-role ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .lp-role li { font-size: 14px; color: var(--text-2); padding-left: 14px; position: relative; }
+  .lp-role li::before { content: "·"; position: absolute; left: 2px; color: var(--primary); font-weight: 900; }
 
-  @media (max-width: 960px) {
-    .features { grid-template-columns: repeat(2, 1fr); }
-    .flow { grid-template-columns: 1fr; gap: 18px; }
-    .flow li { padding: 0 0 0 52px; }
-    .flow li::before { position: absolute; left: 0; top: 0; margin: 0; }
-    .flow li::after { top: 36px; bottom: -18px; left: 17px; right: auto; width: 2px; height: auto; }
-    .scenarios { grid-template-columns: repeat(2, 1fr); }
+  .lp-scenarios { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .lp-scenario { display: flex; flex-direction: column; gap: 6px; padding: 22px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); }
+  .lp-scenario .role { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--primary-weak); color: var(--primary-weak-text); }
+  .lp-scenario .role.t { background: var(--success-weak); color: var(--success); }
+  .lp-scenario h3 { font-size: 17px; margin: 4px 0 0; }
+  .lp-scenario p { margin: 0 0 12px; font-size: 14px; color: var(--text-2); flex: 1; }
+  .lp-scenario .lp-form { display: block; }
+
+  .lp-fit { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lp-fit > div { padding: 28px; border-radius: 20px; border: 1px solid var(--border); }
+  .lp-fit .good { background: var(--primary-weak); border-color: color-mix(in srgb, var(--primary) 30%, transparent); }
+  .lp-fit h3 { font-size: 15px; margin-bottom: 14px; }
+  .lp-fit .good h3 { color: var(--primary-weak-text); }
+  .lp-fit .bad h3 { color: var(--text-3); }
+  .lp-fit ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 15px; }
+  .lp-fit .good li::before { content: "✓ "; color: var(--primary); font-weight: 900; }
+  .lp-fit .bad li { color: var(--text-3); }
+  .lp-fit .bad li::before { content: "– "; }
+
+  .lp-start { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .lp-start > div { padding: 24px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); }
+  .lp-start .n { font-size: 32px; font-weight: 900; color: var(--primary); letter-spacing: -0.03em; }
+  .lp-start h3 { font-size: 17px; margin: 6px 0 6px; }
+  .lp-start p { margin: 0; font-size: 14px; color: var(--text-2); }
+
+  .lp-price { max-width: 760px; margin: 0 auto; padding: 40px; border-radius: 24px; text-align: center; background: var(--surface); border: 2px solid var(--primary); box-shadow: var(--shadow-lg); }
+  .lp-price h3 { font-size: 26px; font-weight: 900; letter-spacing: -0.03em; }
+  .lp-price h3 span { color: var(--primary); }
+  .lp-price .rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 24px 0 8px; text-align: left; }
+  .lp-price .rows div { padding: 16px; border-radius: 14px; background: var(--surface-2); }
+  .lp-price .rows b { display: block; font-size: 20px; color: var(--primary); letter-spacing: -0.02em; }
+  .lp-price .rows span { font-size: 13px; color: var(--text-2); }
+  .lp-price .small { font-size: 13px; color: var(--text-3); margin: 12px 0 0; }
+
+  .lp-faq { max-width: 860px; margin: 0 auto; display: grid; gap: 10px; }
+  .lp-faq details { padding: 20px 24px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); }
+  .lp-faq summary { cursor: pointer; font-weight: 700; font-size: 16px; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  .lp-faq summary::-webkit-details-marker { display: none; }
+  .lp-faq summary::after { content: "+"; color: var(--text-3); font-weight: 400; font-size: 22px; line-height: 1; }
+  .lp-faq details[open] summary::after { content: "−"; }
+  .lp-faq p { margin: 12px 0 0; color: var(--text-2); font-size: 15px; }
+
+  .lp-final { padding: 88px 0; background: var(--primary); color: #fff; text-align: center; }
+  .lp-final h2 { color: #fff; font-size: 38px; font-weight: 900; letter-spacing: -0.035em; line-height: 1.3; margin-bottom: 12px; }
+  .lp-final p { color: rgba(255,255,255,.8); margin-bottom: 28px; }
+  .lp-final .cta { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .lp-final .mail { margin-top: 18px; font-size: 13px; color: rgba(255,255,255,.75); }
+  .lp-final .mail a { color: #fff; text-decoration: underline; }
+
+  /* 풋터 */
+  .lp-footer { background: #191F28; color: #8B95A1; padding: 40px 0; font-size: 12px; }
+  .lp-footer .lp-wrap { display: flex; justify-content: space-between; gap: 16px; }
+  .lp-footer .brand { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .lp-footer .brand img { width: 24px; height: 24px; }
+  .lp-footer .brand span { color: #fff; font-weight: 700; font-size: 14px; }
+  .lp-footer p { margin: 0; }
+  .lp-footer a { color: #8B95A1; }
+  .lp-footer a:hover { color: #fff; }
+  .lp-footer .links { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+
+  @media (max-width: 1024px) {
+    .lp-nav { display: none; }
+    .lp-hero .lp-wrap { grid-template-columns: 1fr; text-align: center; }
+    .lp-hero .cta { justify-content: center; }
+    .lp-shots { max-width: 520px; width: 100%; margin: 0 auto; }
+    .lp-steps { grid-template-columns: repeat(3, 1fr); }
+    .lp-features { grid-template-columns: repeat(2, 1fr); }
+    .lp-roles, .lp-scenarios { grid-template-columns: repeat(2, 1fr); }
+    .lp-start { grid-template-columns: repeat(2, 1fr); }
   }
-  @media (max-width: 768px) {
-    .intro { padding: 0 16px 56px; }
-    .hero { grid-template-columns: 1fr; gap: 40px; padding: 28px 0 56px; }
-    .hero h1 { font-size: 32px; }
-    .hero .lead { font-size: 16px; }
-    .hero .cta .btn { flex: 1; }
-    .hero .cta .intro-form { flex: 1; display: flex; }
-    .mock { width: 260px; }
-    .mock-sms { right: -12px; width: 200px; }
-    .section > h2 { font-size: 24px; }
-    .features, .zero, .scenarios { grid-template-columns: 1fr; }
-    .final { padding: 32px 20px; }
+  @media (max-width: 640px) {
+    .lp-header .right .lp-btn.gray { display: none; }
+    .lp-hero { padding: 40px 0 56px; }
+    .lp-hero h1 { font-size: 34px; }
+    .lp-hero .lead { font-size: 16px; }
+    .lp-hero .cta .lp-btn, .lp-hero .cta .lp-form { flex: 1; }
+    .lp-hero .cta .lp-form .lp-btn { width: 100%; padding: 0 12px; }
+    .lp-shots { height: 330px; }
+    .lp-board { width: 290px; top: 0; }
+    .lp-board .stats { grid-template-columns: repeat(2, 1fr); }
+    .lp-board .stats .stat:nth-child(3) { display: none; }
+    .lp-phone { width: 170px; top: 120px; }
+    .lp-section, .lp-final { padding: 64px 0; }
+    .lp-h2, .lp-final h2 { font-size: 26px; }
+    .lp-pains, .lp-steps, .lp-features, .lp-roles, .lp-scenarios, .lp-fit, .lp-start, .lp-price .rows { grid-template-columns: 1fr; }
+    .lp-price { padding: 28px 20px; }
+    .lp-footer .lp-wrap { flex-direction: column; }
+    .lp-footer .links { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; }
   }
 </style>
 {% endblock %}
 
 {% block body %}
-<div class="intro">
-  <header class="intro-top">
-    <span class="brand">{{ academy_name }}</span>
-    {% if me %}<a href="/" class="btn btn-secondary btn-sm">대시보드로</a>
-    {% else %}<a href="/login" class="btn btn-ghost btn-sm">로그인</a>{% endif %}
-  </header>
+<header class="lp-header">
+  <div class="lp-wrap">
+    <a href="/intro" class="lp-logo"><img src="{{ url_for('static', path='favicon/favicon.svg') }}" alt="">{{ site.product }}</a>
+    <nav class="lp-nav">
+      <a href="#flow">운영 흐름</a>
+      <a href="#features">기능</a>
+      <a href="#try">체험</a>
+      <a href="#start">도입 방법</a>
+      <a href="#faq">FAQ</a>
+      <a href="{{ site.inquiry_url }}">문의 게시판</a>
+    </nav>
+    <div class="right">
+      {% if me %}
+      <a href="/" class="lp-btn small">대시보드로</a>
+      {% else %}
+      <a href="/login" class="lp-btn small gray">학원 로그인</a>
+      <a href="#try" class="lp-btn small">데모 체험하기</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
 
-  <section class="hero">
+<section class="lp-hero">
+  <div class="lp-wrap">
     <div>
-      <span class="eyebrow">강사 1~3명, 학생 100명 규모의 학원을 위해</span>
-      <h1>출결·수납·문자 알림을<br><em>한 곳에서, 운영비 0원</em>으로</h1>
-      <p class="lead">휴대폰으로 출석을 누르면 결석 문자가 자동으로 가고, 입금 문자가 오면 납부가 자동으로 확인돼요. 원장님은 아침에 대시보드만 보면 돼요.</p>
+      <span class="lp-eyebrow">강사 1~3명 · 학생 100명 규모 · 운영비 0원</span>
+      <h1>출결·수납·문자 알림<br><span>학원 운영을 한 곳에서</span></h1>
+      <p class="lead">강사님이 휴대폰으로 출석을 누르면 결석 문자가 자동으로 가고, 입금 문자가 오면 납부가 자동으로 확인됩니다. 원장님은 아침에 대시보드만 보면 됩니다.</p>
       <div class="cta">
         {% if me %}
-        <a href="/" class="btn">대시보드로 가기</a>
+        <a href="/" class="lp-btn">대시보드로 가기</a>
         {% else %}
         {{ try_button('admin', '/', '원장으로 둘러보기') }}
-        {{ try_button('teacher', '/attendance', '강사로 둘러보기', 'btn-weak') }}
+        {{ try_button('teacher', '/attendance', '강사로 둘러보기', 'ghost') }}
         {% endif %}
       </div>
-      <p class="note">가입 없이 바로 들어가요 · 데이터는 모두 가짜예요 · 문자는 실제로 나가지 않아요</p>
+      <p class="note">가입 없이 바로 들어가요. <b>데이터는 모두 가짜</b>이고 문자는 실제로 나가지 않아요.</p>
     </div>
 
-    <div class="mock" aria-hidden="true">
-      <div class="bar"></div>
-      <h4>중2 수학 A</h4>
-      <p class="sub">오늘 17:00 · 1강의실 · 5/6명 체크</p>
-      <div class="att-grid">
-        {% for name, st, label in [('김민준', 'present', '출석'), ('이서연', 'present', '출석'), ('박도윤', 'late', '지각'), ('최하은', 'absent', '결석'), ('정시우', 'present', '출석'), ('강지유', 'none', '미체크')] %}
-        <div class="att-tile {{ st }}"><div class="main"><span class="name">{{ name }}</span><span class="state">{{ label }}</span></div></div>
-        {% endfor %}
+    <div class="lp-shots" aria-hidden="true">
+      <div class="lp-board">
+        <div class="bar"><i></i>{{ academy_name }} · 오늘 현황<span>원장 대시보드</span></div>
+        <div class="body">
+          <div class="stats">
+            <div class="stat">오늘 수업<b>6개</b></div>
+            <div class="stat">오늘 결석<b class="red">2명</b></div>
+            <div class="stat">이번 달 미납<b class="red">3건</b></div>
+          </div>
+          <div class="lp-todo">
+            <div>확인이 필요한 입금<em class="o">2</em></div>
+            <div>기한이 지난 미납<em>3</em></div>
+            <div>발급할 현금영수증<em class="o">5</em></div>
+            <div>끝났는데 출결을 다 체크하지 않은 수업<em class="o">1</em></div>
+          </div>
+        </div>
       </div>
-      <div class="mock-sms">
-        <div class="from">문자 · 17:10</div>
-        <div class="bubble">[{{ academy_name }}] 최하은 학생이 오늘 17:00 중2 수학 A 수업에 결석했어요.</div>
+      <div class="lp-phone">
+        <div class="notch"></div>
+        <h4>중2 수학 A</h4>
+        <p>17:00 · 1강의실 · 5/6명 체크</p>
+        <div class="att-grid">
+          {% for name, st, label in [('김민준', 'present', '출석'), ('이서연', 'present', '출석'), ('박도윤', 'late', '지각'), ('최하은', 'absent', '결석'), ('정시우', 'present', '출석'), ('강지유', 'none', '미체크')] %}
+          <div class="att-tile {{ st }}"><div class="main"><span class="name">{{ name }}</span><span class="state">{{ label }}</span></div></div>
+          {% endfor %}
+        </div>
+        <div class="sms">[{{ academy_name }}] 최하은 학생이 오늘 17:00 중2 수학 A 수업에 결석했어요.</div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="section">
-    <h2>학원 운영에 필요한 것만</h2>
-    <p class="lead">복잡한 설정 없이, 매일 쓰는 일을 빠르게.</p>
-    <div class="features">
+<section class="lp-section">
+  <div class="lp-wrap">
+    <h2 class="lp-h2">이런 고민, 있으셨나요?</h2>
+    <ul class="lp-pains">
+      <li>출석부를 들고 다니며 체크하고, 결석생 학부모님께 일일이 연락한다</li>
+      <li>누가 이번 달 수강료를 냈는지 통장 내역과 엑셀을 맞춰 본다</li>
+      <li>청구·미납 안내 문자를 매달 손으로 보낸다</li>
+      <li>휴강·보강 일정이 카톡과 수첩에 흩어져 있다</li>
+      <li>학원 관리 프로그램은 월 사용료와 문자 비용이 부담된다</li>
+      <li>선생님마다 담당 반 정보를 따로 물어보게 된다</li>
+    </ul>
+    <p class="lp-summary">{{ site.product }}는 이 일을 <b>청구 → 출결 → 알림 → 입금 확인</b> 한 줄의 흐름으로 정리합니다.</p>
+  </div>
+</section>
+
+<section class="lp-section tint" id="flow">
+  <div class="lp-wrap">
+    {{ section_head('HOW IT FLOWS', '사람이 할 일은 출석 누르기뿐입니다', '나머지는 정해진 때에 자동으로 넘어갑니다.') }}
+    <div class="lp-steps">
+      {% for n, who, what, when, c in [
+        (1, '원장', '청구 생성·안내', '매월 1일 10시 자동', 'var(--primary)'),
+        (2, '강사', '출결 체크', '수업 시작, 휴대폰으로', 'var(--success)'),
+        (3, '자동', '결석 알림 문자', '수업 10분 뒤 · 출석하면 취소', 'var(--warning)'),
+        (4, '자동', '납부 확인', '은행 입금 문자를 읽어 매칭', '#8b5cf6'),
+        (5, '원장', '대시보드 확인', '다음 날 아침, 할 일만', 'var(--primary)'),
+      ] %}
+      <div class="lp-step" style="--c: {{ c }}"><div class="n">STEP {{ n }}</div><div class="who">{{ who }}</div><div class="what">{{ what }}</div><div class="when">{{ when }}</div></div>
+      {% endfor %}
+    </div>
+    <p class="lp-note">야간(21시~8시)에는 문자를 보내지 않고 아침으로 미룹니다. 같은 학생에게 같은 안내는 하루 한 번만 갑니다.</p>
+  </div>
+</section>
+
+<section class="lp-section" id="features">
+  <div class="lp-wrap">
+    {{ section_head('FEATURES', '학원 운영에 필요한 것만', '복잡한 설정 없이, 매일 쓰는 일을 빠르게.') }}
+    <div class="lp-features">
       {% for ic, title, desc in [
         ('check', '탭 한 번 출결', '이름을 누를 때마다 출석 → 지각 → 결석. 휴대폰에서 3열 버튼으로 빠르게.'),
         ('calendar', '반·시간표', '정규 시간표만 정하면 회차가 자동으로. 강의실·강사 시간이 겹치면 알려줘요.'),
         ('users', '학생·보호자', '상담 메모, 월별 출결 이력과 출석률, 엑셀로 명단 한 번에 등록.'),
-        ('download', '수납', '매월 1일 청구 자동 생성, 완납 체크, 부분 납부, 엑셀 내보내기, 현금영수증 목록.'),
-        ('search', '입금 자동 확인', '은행 입금 알림 문자를 읽어 청구와 자동으로 맞춰요. 형제 합산도 나눠서.'),
-        ('menu', '문자 알림', '결석은 수업 10분 뒤, 청구·리마인드·미납 안내는 정해진 날 자동으로. 야간엔 보내지 않아요.'),
+        ('download', '수납', '매월 청구 자동 생성, 완납 체크, 부분 납부, 엑셀 내보내기, 현금영수증 목록.'),
+        ('search', '입금 자동 확인', '은행 입금 알림 문자를 읽어 청구와 맞춰요. 형제 합산 입금도 나눠서.'),
+        ('menu', '문자 알림', '결석·청구·리마인드·미납 안내를 정해진 때 자동으로. 문구는 직접 고쳐요.'),
         ('home', '할 일 대시보드', '미납, 확인할 입금, 발송 실패, 출결 미체크를 아침에 한눈에.'),
         ('upload', '자동 백업', '매일 새벽 DB 사본을 남기고, 클라우드 동기화 폴더로 이중 보관.'),
       ] %}
-      <div class="feature"><div class="ic">{{ icon(ic) }}</div><h3>{{ title }}</h3><p>{{ desc }}</p></div>
+      <div class="lp-feature"><div class="ic">{{ icon(ic) }}</div><h3>{{ title }}</h3><p>{{ desc }}</p></div>
       {% endfor %}
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="section">
-    <h2>하루가 이렇게 흘러가요</h2>
-    <p class="lead">사람이 할 일은 출석 누르기뿐이에요.</p>
-    <ol class="flow">
-      {% for when, title, desc in [
-        ('매월 1일 10시', '청구 자동 생성', '수강 중인 반의 수강료로 청구서를 만들고 학부모께 안내 문자를 보내요.'),
-        ('수업 시작', '출결 체크', '강사님이 휴대폰으로 이름을 눌러 체크해요.'),
-        ('10분 뒤', '결석 알림', '결석이면 보호자께 자동으로 문자. 그 전에 출석으로 바꾸면 취소돼요.'),
-        ('입금되면', '납부 자동 확인', '은행 입금 문자를 읽어 청구와 맞추고 납부 확인 문자를 보내요.'),
-        ('다음 날 아침', '대시보드', '미납·확인할 입금·발송 실패만 처리하면 끝.'),
-      ] %}
-      <li><span class="when">{{ when }}</span><h3>{{ title }}</h3><p>{{ desc }}</p></li>
-      {% endfor %}
-    </ol>
-  </section>
-
-  <section class="section">
-    <h2>운영비는 0원이에요</h2>
-    <p class="lead">유료 서비스 없이 이미 있는 것으로 돌아가요.</p>
-    <div class="zero">
-      <div class="item"><div class="won">서버비 0원</div><h3>학원 PC에 설치</h3><p>데이터는 학원 안에. Cloudflare Tunnel로 밖에서도 안전한 https 주소로 접속해요.</p></div>
-      <div class="item"><div class="won">문자비 0원</div><h3>남는 안드로이드 폰</h3><p>알뜰폰 문자 무제한 요금제로 결석·수납 문자를 보내요. 학부모는 설치할 게 없어요.</p></div>
-      <div class="item"><div class="won">수수료 0원</div><h3>계좌이체 자동 확인</h3><p>PG 결제 대신 입금 문자 자동 매칭. 카드는 학원 단말기로 받고 기록만 해요.</p></div>
+<section class="lp-section tint">
+  <div class="lp-wrap">
+    {{ section_head('SCREENS', '역할마다 자기 할 일만 보입니다') }}
+    <div class="lp-roles" style="margin-top:40px">
+      <div class="lp-role"><span class="tag">원장 · PC/태블릿</span><h3>학원 운영은 한 곳에서</h3>
+        <ul><li>대시보드: 오늘 수업, 결석자, 할 일</li><li>수납: 청구·완납 체크·입금 매칭</li><li>반·시간표, 강사 계정, 문자 문구</li><li>백업 확인과 내려받기</li></ul></div>
+      <div class="lp-role"><span class="tag">강사 · 휴대폰</span><h3>내 수업만, 빠르게</h3>
+        <ul><li>오늘 내 수업과 대강 수업</li><li>이름을 눌러 출결, ⋯ 로 공결·메모</li><li>담당 학생 상담 메모</li><li>주간 시간표</li></ul></div>
+      <div class="lp-role"><span class="tag">학부모 · 문자</span><h3>설치할 것 없이</h3>
+        <ul><li>결석하면 수업 10분 뒤 문자</li><li>청구 금액·기한·입금자명 안내</li><li>입금이 확인되면 납부 확인 문자</li><li>가입 없는 조회 전용 링크</li></ul></div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="section" id="try">
-    <h2>무엇부터 볼까요?</h2>
-    <p class="lead">누르면 바로 그 화면으로 들어가요.</p>
-    <div class="scenarios">
+<section class="lp-section" id="try">
+  <div class="lp-wrap">
+    {{ section_head('TRY IT', '무엇부터 볼까요?', '누르면 원장·강사 계정으로 바로 그 화면이 열립니다. 다른 방문자가 바꾼 내용도 함께 보이며, 매일 새벽 4시에 처음 상태로 돌아갑니다.') }}
+    <div class="lp-scenarios">
       {% for title, desc, role, path in scenarios %}
-      <div class="scenario">
-        <span class="badge role {{ 'badge-blue' if role == 'admin' else 'badge-green' }}">{{ '원장' if role == 'admin' else '강사' }}</span>
+      <div class="lp-scenario">
+        <span class="role {{ '' if role == 'admin' else 't' }}">{{ '원장' if role == 'admin' else '강사' }}</span>
         <h3>{{ title }}</h3>
         <p>{{ desc }}</p>
-        {{ try_button(role, path, '체험하기', 'btn-secondary') }}
+        {{ try_button(role, path, '체험하기', 'gray block') }}
       </div>
       {% endfor %}
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="section">
-    <h2>자주 묻는 질문</h2>
-    <div class="faq" style="margin-top:20px">
-      <details><summary>데모에서 문자가 실제로 가나요?</summary>
-        <p>아니요. 데모는 코드에서 실제 발송을 막아 두었어요. 보낸 문자는 알림 → 테스트 수신함에서 학부모가 받을 모습 그대로 볼 수 있어요.</p></details>
-      <details><summary>데모에서 바꾼 내용은 어떻게 되나요?</summary>
-        <p>매일 새벽 4시에 처음 상태로 돌아가요. 로그인 화면의 '데모 처음 상태로 되돌리기'로 바로 되돌릴 수도 있어요.</p></details>
-      <details><summary>실제로 쓰려면 무엇이 필요한가요?</summary>
-        <p>항상 켜 둘 학원 PC(Windows) 한 대, 문자용 안드로이드 폰, 도메인 하나면 돼요. 설치하면 매일 자동 백업까지 돌아가요.</p></details>
-      <details><summary>학부모도 로그인하나요?</summary>
-        <p>아니요. 학부모는 문자로 안내를 받고, 학생마다 있는 조회 전용 링크로 확인해요 (가입 없음).</p></details>
-      <details><summary>어떤 기술로 만들었나요?</summary>
-        <p>FastAPI, HTMX, SQLite로 만든 가벼운 웹 앱이에요. 빌드 도구 없이 PC 한 대에서 돌아가요.</p></details>
+<section class="lp-section tint">
+  <div class="lp-wrap">
+    <h2 class="lp-h2" style="margin-bottom:40px">우리 학원에 맞을까요?</h2>
+    <div class="lp-fit">
+      <div class="good"><h3>잘 맞는 학원</h3><ul>
+        <li>강사 1~3명, 학생 100명 안팎의 보습·교과 학원</li>
+        <li>월 수강료를 계좌이체로 많이 받는 학원</li>
+        <li>정해진 요일·시간에 반 수업을 하는 학원</li>
+        <li>학원에 항상 켜 둘 PC가 있는 학원</li></ul></div>
+      <div class="bad"><h3>아직 맞지 않을 수 있는 학원</h3><ul>
+        <li>회차 차감·패키지 방식 수강료가 대부분인 학원</li>
+        <li>1:1 개별 예약 레슨 위주의 학원</li>
+        <li>여러 지점을 한 번에 관리해야 하는 학원</li>
+        <li>카카오 알림톡이 꼭 필요한 학원 (추후 지원 예정)</li></ul></div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="final">
-    <h2>직접 눌러 보는 게 제일 빨라요</h2>
-    <p>원장·강사 화면을 가입 없이 둘러보세요.</p>
+<section class="lp-section" id="start">
+  <div class="lp-wrap">
+    {{ section_head('GET STARTED', '도입은 이렇게 진행됩니다', '설치부터 실사용까지 직접 도와드립니다.') }}
+    <div class="lp-start">
+      <div><div class="n">01</div><h3>도입 문의</h3><p>학원 규모와 수업 방식, 수납 방식을 알려 주세요.</p></div>
+      <div><div class="n">02</div><h3>PC·폰 준비</h3><p>항상 켜 둘 학원 PC 한 대와 문자용 안드로이드 폰을 준비해요.</p></div>
+      <div><div class="n">03</div><h3>설치·명단 등록</h3><p>설치와 인터넷 주소 연결을 해 드리고, 기존 명단은 엑셀로 한 번에 옮겨요.</p></div>
+      <div><div class="n">04</div><h3>운영 시작</h3><p>반·시간표를 정하면 바로 출결·수납·알림이 돌아가요.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="lp-section tint">
+  <div class="lp-wrap">
+    {{ section_head('PRICING', '매달 나가는 돈이 없습니다') }}
+    <div class="lp-price" style="margin-top:32px">
+      <h3>운영비 <span>0원</span></h3>
+      <div class="rows">
+        <div><b>서버비 0원</b><span>학원 PC에 설치. 데이터는 학원 안에, 밖에서도 안전한 https 주소로 접속</span></div>
+        <div><b>문자비 0원</b><span>남는 안드로이드 폰과 알뜰폰 문자 무제한 요금제로 발송</span></div>
+        <div><b>수수료 0원</b><span>PG 결제 대신 계좌이체 입금 문자 자동 확인</span></div>
+      </div>
+      <p class="small">문자 요금제(알뜰폰 최저 요금제)와 도메인 비용은 별도입니다. 정보성 문자(출결·수납)만 보냅니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="lp-section" id="faq">
+  <div class="lp-wrap">
+    <h2 class="lp-h2" style="margin-bottom:40px">자주 묻는 질문</h2>
+    <div class="lp-faq">
+      <details><summary>데모에서 문자가 실제로 가나요?</summary>
+        <p>아니요. 데모는 코드에서 실제 발송을 막아 두었습니다. 보낸 문자는 알림 → 테스트 수신함에서 학부모님이 받을 모습 그대로 볼 수 있습니다.</p></details>
+      <details><summary>데모에서 바꾼 내용은 어떻게 되나요?</summary>
+        <p>매일 새벽 4시에 처음 상태로 돌아갑니다. 로그인 화면의 '데모 처음 상태로 되돌리기'로 바로 되돌릴 수도 있습니다.</p></details>
+      <details><summary>학생 개인정보는 어디에 저장되나요?</summary>
+        <p>학원 PC 안에만 저장됩니다. 매일 새벽 DB 사본을 남기고, 원하시면 OneDrive·구글 드라이브 동기화 폴더에도 보관합니다.</p></details>
+      <details><summary>학부모님도 앱을 설치하거나 가입해야 하나요?</summary>
+        <p>아니요. 학부모님은 문자로 안내를 받고, 학생마다 있는 조회 전용 링크로 확인합니다.</p></details>
+      <details><summary>PC가 꺼지면 어떻게 되나요?</summary>
+        <p>PC를 다시 켜면 자동으로 실행되고, 꺼져 있던 동안 보내야 했던 수납 안내도 이어서 처리합니다. 수업 시간에는 PC를 켜 두는 것을 권합니다.</p></details>
+      <details><summary>어떤 기술로 만들었나요?</summary>
+        <p>FastAPI, HTMX, SQLite로 만든 가벼운 웹 앱입니다. 빌드 도구 없이 PC 한 대에서 돌아갑니다.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="lp-final">
+  <div class="lp-wrap">
+    <h2>우리 학원에 맞는지<br>직접 눌러 보세요</h2>
+    <p>원장·강사 화면을 가입 없이 둘러보고, 도입이 궁금하면 편하게 물어보세요.</p>
     <div class="cta">
       {% if me %}
-      <a href="/" class="btn">대시보드로 가기</a>
+      <a href="/" class="lp-btn white">대시보드로 가기</a>
       {% else %}
-      {{ try_button('admin', '/', '원장으로 둘러보기') }}
-      {{ try_button('teacher', '/attendance', '강사로 둘러보기', 'btn-secondary') }}
+      {{ try_button('admin', '/', '원장으로 둘러보기', 'white') }}
       {% endif %}
     </div>
-  </section>
-  <p class="intro-foot">데모 버전 · 매일 새벽 4시 초기화 · 화면의 이름·연락처는 모두 가짜예요</p>
-</div>
+    <p class="mail">도입 문의 · <a href="mailto:{{ site.email }}?subject={{ ('[' ~ site.product ~ '] 도입 문의')|urlencode }}">{{ site.email }}</a></p>
+  </div>
+</section>
+
+<footer class="lp-footer">
+  <div class="lp-wrap">
+    <div>
+      <div class="brand"><img src="{{ url_for('static', path='favicon/favicon.svg') }}" alt=""><span>{{ site.product }}</span></div>
+      <p>운영 {{ site.operator }} · 문의 <a href="mailto:{{ site.email }}">{{ site.email }}</a></p>
+    </div>
+    <div class="links">
+      <a href="{{ site.inquiry_url }}">문의 게시판</a>
+      <a href="/login">직원 로그인</a>
+      <p>© {{ site.copyright }}</p>
+    </div>
+  </div>
+</footer>
 {% endblock %}

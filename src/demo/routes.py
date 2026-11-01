@@ -12,6 +12,15 @@ from demo import seed
 router = APIRouter(prefix="/demo")
 intro_router = APIRouter()
 
+# 소개 페이지·풋터에 보이는 정보
+SITE = {
+    "product": "Academy",
+    "operator": "박종욱",
+    "email": "jw.park363@gmail.com",
+    "inquiry_url": "https://jwp-system.duckdns.org/inquiries",  # JWP-SYSTEM 문의 게시판
+    "copyright": "JWP-SYSTEM",
+}
+
 # 소개 페이지의 '체험 코스': (제목, 설명, 역할, 바로 열 화면)
 SCENARIOS = [
     ("아침에 할 일 확인", "대시보드에서 미납·확인할 입금·발송 실패를 한눈에", "admin", "/"),
@@ -44,7 +53,7 @@ def _safe_next(value: str | None) -> str:
 def intro(request: Request, db: DBSession):
     user_id = request.session.get("user_id")
     user = db.get(User, user_id) if user_id else None
-    return render(request, "intro.html", {"me": user, "scenarios": SCENARIOS})
+    return render(request, "intro.html", {"me": user, "scenarios": SCENARIOS, "site": SITE})
 
 
 @router.post("/login/{role}")
